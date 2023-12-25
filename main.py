@@ -1,27 +1,67 @@
 class NPCChatter:
+
+    same_word_count = 3
+    history_size = 5
+    min_message_interval = 10
+    max_message_interval = 60
+
     def __init__(self):
         self.commands = {
-            "WC": NPCCommand(self.set_same_word_count, "how many times a word has to appear in a row to type the same"),
             "EXIT": NPCCommand(self.exit, "closes the NPCChatter"),
-            "HELP": NPCCommand(self.print_help, "lists all of the commands with help texts")
+            "INFO": NPCCommand(self.print_info, "lists current attribute values"),
+            "HELP": NPCCommand(self.print_help, "lists all of the commands with help texts"),
+            "HS": NPCCommand(self.set_history_size, "set history size, how many messages are stored until forgetting"),
+            "MAXD": NPCCommand(self.set_max_message_interval, "set maximum of random delay between messages"),
+            "MIND": NPCCommand(self.set_min_message_interval, "set minimum of random delay between messages"),
+            "WC": NPCCommand(self.set_same_word_count, "how many times a word has to appear in a row to type the same"),
         }
-        self.same_word_count = 3
 
     def set_same_word_count(self, *args):
-        if len(args) < 1:
-            raise NPCError("You forgot to give the count!")
+        self.set_num_attr("same_word_count", *args)
 
-        if not args[0].isdigit():
-            raise NPCError("The given argument isn't a number!")
+    def set_history_size(self, *args):
+        self.set_num_attr("history_size", *args)
 
-        self.same_word_count = int(args[0])
-        print(f"Same word count set to [ {self.same_word_count} ]")
+    def set_min_message_interval(self, *args):
+        self.set_num_attr("min_message_interval", *args)
+
+    def set_max_message_interval(self, *args):
+        self.set_num_attr("max_message_interval", *args)
+
+    def print_info(self, *_):
+        print("========== Chatter settings info ==========")
+        print(f"Same word count: {self.same_word_count}")
+        print(f"History size: {self.history_size}")
+        print(f"Minimum message interval: {self.min_message_interval}")
+        print(f"Maximum message interval: {self.max_message_interval}")
+        print("========================================")
 
     def print_help(self, *_):
         print("========== Available commands ==========")
         for command, command_function in self.commands.items():
             print(f"{command} - {command_function.get_help_text()}")
         print("========================================")
+
+    def set_num_attr(self, attribute_name, *args):
+        if not (hasattr(self, attribute_name)):
+            raise NPCError(f"Given attribute '{attribute_name}' doesn't exist!")
+
+        if not isinstance(attribute_name, str):
+            raise NPCError("Given attribute name isn't a string!")
+
+        if len(args) < 1:
+            raise NPCError("You forgot to give the value!")
+
+        user_value = args[0]    # resf of values are ignored
+        if not user_value.isdigit():
+            raise NPCError(f"Given argument '{user_value}' isn't a number!")
+
+        user_value = int(user_value)
+        if user_value < 1:
+            raise NPCError(f"Given value '{user_value}' is invalid!")
+
+        setattr(self, attribute_name, user_value)
+        print(f"{attribute_name.upper()} set to [{getattr(self, attribute_name)}]")
 
     @staticmethod
     def exit(*_):
