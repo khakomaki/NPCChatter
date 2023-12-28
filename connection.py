@@ -12,6 +12,7 @@ class TwitchConnection:
 
     PORT = 6697
     SERVER = "irc.chat.twitch.tv"
+    CHAT_COMMAND_SYMBOL = "!"
     connected = False
     connection = None
 
@@ -19,6 +20,7 @@ class TwitchConnection:
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
         self.nickname = os.environ.get("NICKNAME")
         self.chat = os.environ.get("CHAT")
+        self.thread_lock = threading.Lock()
 
     def connect(self):
         if self.connected:
@@ -28,25 +30,35 @@ class TwitchConnection:
         SSLContext.load_verify_locations(cafile=os.path.relpath(certifi.where()))   # verifying certification for SSL connection
 
         self.connection = SSLContext.wrap_socket(socket.socket(), server_hostname=self.SERVER)  # SSL wrap
-        self.connection.connect((self.SERVER, self.PORT))   # connects to server
-        self.connected = True
+        self.open_connection()
 
         # starts receiving messages in a separate thread
         self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
         self.receive_thread.start()
         
-        self.connection.send(f"PASS oauth:{self.oauth}\r\n".encode("utf-8"))    # send oauth token
-        self.connection.send(f"NICK {self.nickname}\r\n".encode("utf-8"))       # send nickname
-        self.connection.send(f"JOIN #{self.chat}\r\n".encode("utf-8"))          # join chat
+        # authentication & chat joining messages
+        self.send_server_message(f"PASS oauth:{self.oauth}")    # send oauth token
+        self.send_server_message(f"NICK {self.nickname}")       # send nickname
+        self.send_server_message(f"JOIN #{self.chat}")          # join chat
 
     def disconnect(self):
         if not self.connected:
             raise TwitchConnectionError("connection is already closed!")
-        
-        self.connection.send(f"PART\r\n".encode("utf-8"))
-        self.connection.close()
-        self.connection = None
-        self.connected = False
+            
+        self.send_server_message("PART")
+        self.close_connection()
+
+    def open_connection(self):
+        # locks threads during opening
+        with self.thread_lock:
+            self.connection.connect((self.SERVER, self.PORT))
+            self.connected = True
+
+    def close_connection(self):
+        # locks threads during closing
+        with self.thread_lock:
+            self.connection.close()
+            self.connected = False
 
     def receive_messages(self):
         # listens until disconnected
@@ -56,20 +68,31 @@ class TwitchConnection:
             if received_message:
                 messages = received_message.split("\r\n")   # received message might contain multiple messages
                 for message in messages:
+                    if len(message) < 1:
+                        continue
                     print(message)
                     # self.respond(message)
 
     def respond(self, received_message):            # TODO: parse command part
         match str(received_message).startswith():
             case "PING":
-                # sends keep-alive message
-                self.connection.send(f"PONG {received_message}\r\n".encode("utf-8"))
+                # keep-alive message
+                self.send_server_message(f"PONG {received_message}")
             case "PART":
-                # informs user, disconnects
-                print("channel banned bot!")
-                self.disconnect()
+                self.close_connection()
             case _:
                 return
+
+    def send_server_message(self, message):
+        if not self.connected:
+            raise TwitchConnectionError("can't send messages because connection isn't established!")
+
+        # locks threads during sending to avoid collisions
+        with self.thread_lock:
+            self.connection.send(f"{message}\r\n".encode("utf-8"))
+
+    def send_chat_message(self, message):
+        self.send_server_message(f"PRIVMSG #{self.nickname} :{message}")
 
     def print_info(self):               # TODO delete
         print(self.oauth)
@@ -79,7 +102,7 @@ class TwitchConnection:
         print(self.connected)
 
     def sleep_and_disconnect(self):     # TODO delete
-        time.sleep(10)
+        time.sleep(20)
         self.disconnect()
 
 
