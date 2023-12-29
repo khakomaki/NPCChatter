@@ -73,15 +73,48 @@ class TwitchConnection:
                     print(message)
                     # self.respond(message)
 
-    def respond(self, received_message):            # TODO: parse command part
-        match str(received_message).startswith():
+    def respond(self, received_message):
+        command, parameters = self.parse_message(received_message)
+
+        match command:
             case "PING":
                 # keep-alive message
-                self.send_server_message(f"PONG {received_message}")
+                self.send_server_message(f"PONG {parameters}")
             case "PART":
                 self.close_connection()
             case _:
                 return
+        
+    def parse_message(self, message: str):
+        command = None
+        parameters = None
+
+        index = 0
+
+        # skips tags
+        if message[index] == '@':
+            index = message.find(' ', index) + 1
+
+        # skips nickname & host
+        if message[index] == ':':
+            index = message.find(' ', index) + 1
+
+        # checks if message has parameters, sets end-index accordingly
+        end_index = message.find(':', index)
+        if end_index < 0:
+            end_index = len(message)
+
+        # command
+        command = message[index:end_index]
+        command_end = command.find(' ')
+        if 0 < command_end:
+            command = command[:command_end]     # removes possible channel / whitespace
+
+        # parameters
+        if index < end_index + 1:
+            parameters = message[end_index + 1:len(message)]
+
+        return command, parameters
 
     def send_server_message(self, message):
         if not self.connected:
@@ -102,7 +135,7 @@ class TwitchConnection:
         print(self.connected)
 
     def sleep_and_disconnect(self):     # TODO delete
-        time.sleep(20)
+        time.sleep(10)
         self.disconnect()
 
 
