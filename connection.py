@@ -24,7 +24,7 @@ class TwitchConnection:
 
     def connect(self):
         if self.connected:
-            raise TwitchConnectionError("connection is already established!")
+            raise TwitchConnectionError("Connection is already established!")
 
         SSLContext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         SSLContext.load_verify_locations(cafile=os.path.relpath(certifi.where()))   # verifying certification for SSL connection
@@ -44,10 +44,12 @@ class TwitchConnection:
 
     def disconnect(self):
         if not self.connected:
-            raise TwitchConnectionError("connection is already closed!")
-            
+            print("Connection already closed")
+            return
+
         self.send_server_message("PART")
         self.close_connection()
+        print("Closed connection")
 
     def open_connection(self):
         # locks threads during opening
@@ -56,7 +58,7 @@ class TwitchConnection:
                 self.connection.connect((self.SERVER, self.PORT))
                 self.connected = True
             except Exception as exception:
-                print(f"problems connecting to twitch server: {exception}")
+                print(f"Problems connecting to Twitch server: {exception}")
                 self.connected = False
 
     def close_connection(self):
@@ -83,21 +85,21 @@ class TwitchConnection:
 
         match command:
             case "PRIVMSG":
-                print(f"user: {parameters}")
+                print(f"User: {parameters}")
             case "PING":
                 # keep-alive message
                 self.send_server_message(f"PONG {parameters}")
             case "PART":
-                print("twitch closed connection")
+                print("Twitch closed connection")
                 self.close_connection()
             case "NOTICE":
-                print("twitch: failed to authenticate")
+                print("Twitch: failed to authenticate")
             case "JOIN":
-                print("joined channel")
+                print("Joined channel")
             case "421":
-                print("twitch: unsupported IRC command")
+                print("Wwitch: unsupported IRC command")
             case "001":
-                print("authentication successful")
+                print("Authentication successful")
             case "002":
                 pass
             case "003":
@@ -115,7 +117,7 @@ class TwitchConnection:
             case "376":
                 pass
             case _:
-                print(f"unexpected command: {command}")
+                print(f"Unexpected command: {command}")
         
     def parse_message(self, message: str):
         command = None
@@ -150,7 +152,7 @@ class TwitchConnection:
 
     def send_server_message(self, message):
         if not self.connected:
-            raise TwitchConnectionError("can't send messages because connection isn't established!")
+            raise TwitchConnectionError("Can't send messages because connection isn't established!")
 
         # locks threads during sending to avoid collisions
         with self.thread_lock:

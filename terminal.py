@@ -1,4 +1,4 @@
-from connection import TwitchConnection
+from connection import *
 
 class NPCChatter:
 
@@ -10,14 +10,15 @@ class NPCChatter:
     def __init__(self, connection: TwitchConnection):
         self.connection = connection
         self.commands = {
+            "CON": NPCCommand(self.connect, "connects to chat"),
+            "DISC": NPCCommand(self.disconnect, "disconnects from chat"),
             "EXIT": NPCCommand(self.exit, "closes the NPCChatter"),
             "INFO": NPCCommand(self.print_info, "lists current attribute values"),
             "HELP": NPCCommand(self.print_help, "lists all of the commands with help texts"),
             "HS": NPCCommand(self.set_history_size, "set history size, how many messages are stored until forgetting"),
             "MAXD": NPCCommand(self.set_max_message_interval, "set maximum of random delay between messages"),
             "MIND": NPCCommand(self.set_min_message_interval, "set minimum of random delay between messages"),
-            "START": NPCCommand(self.connect, "starts the NPCChatter"),
-            "STOP": NPCCommand(self.disconnect, "stops the NPCChatter"),
+            "MSG": NPCCommand(self.send_message, "sends message to chat"),
             "WC": NPCCommand(self.set_same_word_count, "how many times a word has to appear in a row to type the same"),
         }
 
@@ -38,6 +39,11 @@ class NPCChatter:
 
     def disconnect(self):
         self.connection.disconnect()
+
+    def send_message(self, *args):
+        # merges arguments to 1 string
+        message = ' '.join(map(str, args))
+        self.connection.send_chat_message(message)
 
     def print_info(self, *_):
         print("========== Chatter settings info ==========")
@@ -101,7 +107,10 @@ class NPCChatter:
                     print(f"Didn't find any commands named '{user_command}'!")
 
             except NPCError as error:
-                print(f"Error: {error}")
+                print(error)
+            
+            except TwitchConnectionError as error:
+                print(error)
 
             except Exception as error:
                 print(f"Unexpected error: {error}")
