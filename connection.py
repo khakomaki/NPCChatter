@@ -36,10 +36,11 @@ class TwitchConnection:
         self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
         self.receive_thread.start()
         
-        # authentication & chat joining messages
-        self.send_server_message(f"PASS oauth:{self.oauth}")    # send oauth token
-        self.send_server_message(f"NICK {self.nickname}")       # send nickname
-        self.send_server_message(f"JOIN #{self.chat}")          # join chat
+        if self.connected:
+            # authentication & chat joining messages
+            self.send_server_message(f"PASS oauth:{self.oauth}")    # send oauth token
+            self.send_server_message(f"NICK {self.nickname}")       # send nickname
+            self.send_server_message(f"JOIN #{self.chat}")          # join chat
 
     def disconnect(self):
         if not self.connected:
@@ -51,8 +52,12 @@ class TwitchConnection:
     def open_connection(self):
         # locks threads during opening
         with self.thread_lock:
-            self.connection.connect((self.SERVER, self.PORT))
-            self.connected = True
+            try:
+                self.connection.connect((self.SERVER, self.PORT))
+                self.connected = True
+            except Exception as exception:
+                print(f"problems connecting to twitch server: {exception}")
+                self.connected = False
 
     def close_connection(self):
         # locks threads during closing
@@ -70,20 +75,47 @@ class TwitchConnection:
                 for message in messages:
                     if len(message) < 1:
                         continue
-                    print(message)
-                    # self.respond(message)
+                    # print(message)
+                    self.process_message(message)
 
-    def respond(self, received_message):
+    def process_message(self, received_message):
         command, parameters = self.parse_message(received_message)
 
         match command:
+            case "PRIVMSG":
+                print(f"user: {parameters}")
             case "PING":
                 # keep-alive message
                 self.send_server_message(f"PONG {parameters}")
             case "PART":
+                print("twitch closed connection")
                 self.close_connection()
+            case "NOTICE":
+                print("twitch: failed to authenticate")
+            case "JOIN":
+                print("joined channel")
+            case "421":
+                print("twitch: unsupported IRC command")
+            case "001":
+                print("authentication successful")
+            case "002":
+                pass
+            case "003":
+                pass
+            case "004":
+                pass
+            case "353":
+                pass
+            case "366":
+                pass
+            case "372":
+                pass
+            case "375":
+                pass
+            case "376":
+                pass
             case _:
-                return
+                print(f"unexpected command: {command}")
         
     def parse_message(self, message: str):
         command = None
@@ -135,7 +167,7 @@ class TwitchConnection:
         print(self.connected)
 
     def sleep_and_disconnect(self):     # TODO delete
-        time.sleep(10)
+        time.sleep(30)
         self.disconnect()
 
 
@@ -145,6 +177,5 @@ class TwitchConnectionError(Exception):
 
 if __name__ == "__main__":
     connection = TwitchConnection()
-    connection.print_info()
     connection.connect()
     connection.sleep_and_disconnect()
