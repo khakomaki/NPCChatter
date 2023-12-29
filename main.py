@@ -1,6 +1,7 @@
 from terminal import NPCChatter
+from connection import TwitchConnection
 
 if __name__ == "__main__":
-    npc = NPCChatter()
+    connection = TwitchConnection()
+    npc = NPCChatter(connection)
     npc.run()
-    

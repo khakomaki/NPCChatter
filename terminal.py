@@ -1,3 +1,5 @@
+from connection import TwitchConnection
+
 class NPCChatter:
 
     same_word_count = 3
@@ -5,7 +7,8 @@ class NPCChatter:
     min_message_interval = 10
     max_message_interval = 60
 
-    def __init__(self):
+    def __init__(self, connection: TwitchConnection):
+        self.connection = connection
         self.commands = {
             "EXIT": NPCCommand(self.exit, "closes the NPCChatter"),
             "INFO": NPCCommand(self.print_info, "lists current attribute values"),
@@ -13,6 +16,8 @@ class NPCChatter:
             "HS": NPCCommand(self.set_history_size, "set history size, how many messages are stored until forgetting"),
             "MAXD": NPCCommand(self.set_max_message_interval, "set maximum of random delay between messages"),
             "MIND": NPCCommand(self.set_min_message_interval, "set minimum of random delay between messages"),
+            "START": NPCCommand(self.connect, "starts the NPCChatter"),
+            "STOP": NPCCommand(self.disconnect, "stops the NPCChatter"),
             "WC": NPCCommand(self.set_same_word_count, "how many times a word has to appear in a row to type the same"),
         }
 
@@ -27,6 +32,12 @@ class NPCChatter:
 
     def set_max_message_interval(self, *args):
         self.set_num_attr("max_message_interval", *args)
+
+    def connect(self):
+        self.connection.connect()
+
+    def disconnect(self):
+        self.connection.disconnect()
 
     def print_info(self, *_):
         print("========== Chatter settings info ==========")
@@ -63,8 +74,8 @@ class NPCChatter:
         setattr(self, attribute_name, user_value)
         print(f"{attribute_name.upper()} set to [{getattr(self, attribute_name)}]")
 
-    @staticmethod
-    def exit(*_):
+    def exit(self):
+        self.disconnect()
         exit()
 
     def run(self):
