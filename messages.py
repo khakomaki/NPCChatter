@@ -1,4 +1,4 @@
-from queue import Queue
+from collections import deque, Counter
 
 class Messages:
     
@@ -6,89 +6,89 @@ class Messages:
     npc_alert = False       # is NPC-meter over threshold (most common word has to also appear >1 times)
     npc_threshold = 75      # >= what % NPC-meter sets alert
     npc_message = ""        # the most common word / word combo
-    min_same_word_count = 2 # how many of the same word has to appear at least to alert
+    min_same_word_count = 3 # how many of the same word has to appear at least to alert
     
-    def __init__(self, queue_length):
-        self.message_queue = Queue(maxsize = queue_length)
+    
+    def __init__(self, queue_length: int):
+        self.message_queue = deque(maxlen=queue_length)
         self.word_counts = {}
 
-    def add(self, message):
-        # unqueues last if list is full
-        if self.message_queue.full():
-            self.remove()
+    def add(self, user: str, message: str):
+        # pops last message if queue is full
+        if len(self.message_queue) == self.message_queue.maxlen:
+            self.pop()
 
-        self.message_queue.put(message)
-        
-        # adds words to dictionary
         words = self.break_into_words(message)
-        for word in words:
-            count = self.word_counts.get(word, 0)   # gets the count, defaults to 0 if key doesn't exist
-            self.word_counts[word] = count + 1      # increments count by 1
+
+        # adds words and their counters to user's word counts
+        user_word_counts = self.word_counts.setdefault(user, Counter())
+        user_word_counts += Counter(words)
+
+        # adds to queue
+        self.message_queue.appendleft((user, words))
 
         # recalculates NPC-meter
         self.calculate_npc_meter()
 
         return self.npc_alert
 
-    def remove(self):
-        message = self.message_queue.get()
-        words = self.break_into_words(message)
-        for word in words:
-            count = self.word_counts.get(word)
-            self.word_counts[word] = count - 1      # decreases count by 1
-            if self.word_counts[word] < 1:          # removes word from dictionary if count falls under 1
-                self.word_counts.pop(word)
+    def pop(self):
+        # return if queue is empty
+        if len(self.message_queue) < 1:
+            return
 
-    def break_into_words(self, message):
-        return str(message).split()
+        # removes from queue
+        user, words = self.message_queue.pop()
+        
+        # updates word counts
+        user_word_counts = self.word_counts.get(user, Counter())
+        user_word_counts -= Counter(words)
+
+        # removes from user word counts if it becomes empty
+        if len(user_word_counts) < 1:
+            self.word_counts.pop(user, None)
+
 
     def calculate_npc_meter(self):
-        highest_count = -1  # assumes that dictionary doesn't count under 0
-        highest_count_words = ""
-        word_count = 0
-        same_word_count = 0
+        # counts all unique words
+        unique_words = Counter()
+        for user_word_counts in self.word_counts.values():
+            unique_words.update(user_word_counts.keys())
 
-        # makes a string of words with highest count
-        for word, count in self.word_counts.items():
-            word_count = word_count + count
+        # finds most common word
+        most_npc_word, highest_count = unique_words.most_common(1)[0] # gives list of tuples, 0 is on top of the list
 
-            if highest_count < count:       # higher count is found
-                highest_count = count
-                highest_count_words = word
-                same_word_count = 1
-            elif highest_count == count:    # word with the highest count is found
-                highest_count_words = f"{highest_count_words} {word}"
-                same_word_count = same_word_count + 1
+        # updates NPC-meter & NPC-message
+        unique_chatters = len(self.word_counts)
+        self.npc_meter = (highest_count / unique_chatters) * 100
+        self.npc_message = most_npc_word
         
-        self.npc_message = highest_count_words
+        # updates NPC-alert (bool threshold & count exceeded or same value)
+        self.npc_alert = self.npc_threshold <= self.npc_meter and self.min_same_word_count <= highest_count
 
-        # how many percent of words are the top similar words
-        self.npc_meter = 100 * highest_count * same_word_count / word_count
-
-        # sets alert
-        if self.npc_threshold <= self.npc_meter and self.min_same_word_count <= highest_count:
-            self.npc_alert = True
+    def break_into_words(self, message: str):
+        return str(message).split()
 
     def clear(self):
-        self.message_queue = Queue(maxsize = self.message_queue.qsize())
+        self.message_queue.clear()
         self.word_counts.clear()
         self.npc_alert = False
         self.npc_message = ""
         self.npc_meter = 0
 
-    def set_queue_length(self, length):
-        self.message_queue = Queue(maxsize = length)
+    def set_queue_length(self, length: int):
+        self.message_queue = deque(maxlen = length)
 
-    def set_threshold(self, threshold):
+    def set_threshold(self, threshold: int):
         self.npc_threshold = threshold
 
-    def set_min_same_word_count(self, count):
+    def set_min_same_word_count(self, count: int):
         self.min_same_word_count = count
 
-    def get_npc_message(self):
+    def get_npc_message(self) -> str:
         return self.npc_message
 
-    def is_npc_alert(self):
+    def is_npc_alert(self) -> bool:
         return self.npc_alert
 
     def howNPC(self) -> int:
@@ -97,34 +97,31 @@ class Messages:
 
 if __name__ == "__main__":
     messages = Messages(5)
-    if messages.add("KEKW"):
+
+    if messages.add("user123", "KEKW KEKW KEKW"):
         print(f"{messages.howNPC()} - {messages.npc_message}")
         messages.clear()
 
-    if messages.add("TEST"):
+    if messages.add("DEV", "TEST"):
         print(f"{messages.howNPC()} - {messages.npc_message}")
         messages.clear()
 
-    if messages.add("TEST"):
+    if messages.add("chatter", "TEST TEST TEST TEST TEST TEST"):
         print(f"{messages.howNPC()} - {messages.npc_message}")
         messages.clear()
 
-    if messages.add("KEKW"):
+    if messages.add("user123", "KEKW TEST"):
         print(f"{messages.howNPC()} - {messages.npc_message}")
         messages.clear()
 
-    if messages.add("KEKW"):
+    if messages.add("DEV", "KEKW"):
         print(f"{messages.howNPC()} - {messages.npc_message}")
         messages.clear()
 
-    if messages.add("KEKW"):
+    if messages.add("other_username", "KEKW"):
         print(f"{messages.howNPC()} - {messages.npc_message}")
         messages.clear()
 
-    if messages.add("KEKW"):
-        print(f"{messages.howNPC()} - {messages.npc_message}")
-        messages.clear()
-
-    if messages.add("KEKW"):
+    if messages.add("Mod", "KEKW"):
         print(f"{messages.howNPC()} - {messages.npc_message}")
         messages.clear()
