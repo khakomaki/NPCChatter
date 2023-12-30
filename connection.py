@@ -18,6 +18,7 @@ class TwitchConnection:
     connected = False
     connection = None
 
+    queue_length            = 5
     min_message_interval    = 10
     random_wait_time_lower  = 0.1
     random_wait_time_upper  = 2
@@ -29,10 +30,10 @@ class TwitchConnection:
         self.nickname = os.environ.get("NICKNAME")
         self.chat = os.environ.get("CHAT")
         self.thread_lock = threading.Lock()
-        self.chat_messages = Messages(5)
+        self.chat_messages = Messages(self.queue_length)
 
     def connect(self):
-        if self.connected:
+        if self.is_connected():
             raise TwitchConnectionError("Connection is already established!")
 
         SSLContext = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -45,20 +46,19 @@ class TwitchConnection:
         self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
         self.receive_thread.start()
         
-        if self.connected:
+        if self.is_connected():
             # authentication & chat joining messages
             self.send_server_message(f"PASS oauth:{self.oauth}")    # send oauth token
             self.send_server_message(f"NICK {self.nickname}")       # send nickname
             self.send_server_message(f"JOIN #{self.chat}")          # join chat
 
     def disconnect(self):
-        if not self.connected:
+        if not self.is_connected():
             print("Connection already closed")
             return
 
-        self.send_server_message("PART")
-        self.close_connection()
-        print("Closed connection")
+        self.send_server_message(f"PART #{self.chat}")
+        # self.close_connection()
 
     def open_connection(self):
         # locks threads during opening
@@ -90,7 +90,7 @@ class TwitchConnection:
                     self.process_message(message)
 
     def process_message(self, received_message):
-        command, user, parameters = self.parse_message(received_message)
+        user, _, command, parameters = self.parse_message(received_message)
 
         match command:
             case "PRIVMSG":
@@ -112,7 +112,7 @@ class TwitchConnection:
             case "JOIN":
                 print("Joined channel")
             case "421":
-                print("Wwitch: unsupported IRC command")
+                print("Twitch: unsupported IRC command")
             case "001":
                 print("Authentication successful")
             case "002":
@@ -135,8 +135,9 @@ class TwitchConnection:
                 print(f"Unexpected command: {command}")
         
     def parse_message(self, message: str):
+        nick = None
+        host = None
         command = None
-        channel = None
         parameters = None
 
         index = 0
@@ -147,7 +148,17 @@ class TwitchConnection:
 
         # skips nickname & host
         if message[index] == ':':
-            index = message.find(' ', index) + 1
+            end_index = message.find(' ', index)
+
+            # parses nickname and host from source part
+            nickhost = message[index + 1:end_index]
+            if 0 < len(nickhost):
+                nickhost_parts = nickhost.split('!')
+                nick = nickhost_parts[0]
+                if 1 < len(nickhost_parts):
+                    host = nickhost_parts[1]
+
+            index = end_index + 1
 
         # checks if message has parameters, sets end-index accordingly
         end_index = message.find(':', index)
@@ -157,17 +168,17 @@ class TwitchConnection:
         # command & channel
         command_parts = message[index:end_index].strip().split(' ')
         command = command_parts[0]
-        if 1 < len(command_parts):
-            channel = command_parts[1]
+        # if 1 < len(command_parts):
+        #     channel = command_parts[1]
 
         # parameters
         if index < end_index + 1:
             parameters = message[end_index + 1:len(message)]
 
-        return command, channel, parameters
+        return nick, host, command, parameters
 
     def send_server_message(self, message):
-        if not self.connected:
+        if not self.is_connected():
             raise TwitchConnectionError("Can't send messages because connection isn't established!")
 
         # locks threads during sending to avoid collisions
@@ -187,15 +198,19 @@ class TwitchConnection:
             self.send_chat_message(message)
             self.last_bot_message_time = time.time()
 
+    def is_connected(self):
+        with self.thread_lock:
+            return self.connected
+
     def set_npc_response_enabled(self, enabled: bool):
         self.npc_response_enabled = enabled
 
-    def print_info(self):               # TODO delete
-        print(self.oauth)
-        print(self.nickname)
-        print(self.chat)
-        print(self.PORT)
-        print(self.connected)
+    def set_queue_length(self, length: int):
+        if length < 1:
+            raise TwitchConnectionError("Invalid queue length!")
+
+        # creates new Messages-queue with new length
+        self.queue_length = Messages(self.queue_length)
 
     def sleep_and_disconnect(self):     # TODO delete
         time.sleep(30)
