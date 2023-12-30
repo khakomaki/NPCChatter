@@ -90,16 +90,17 @@ class TwitchConnection:
                     self.process_message(message)
 
     def process_message(self, received_message):
-        command, parameters = self.parse_message(received_message)
+        command, user, parameters = self.parse_message(received_message)
 
         match command:
             case "PRIVMSG":
-                print(f"User: {parameters}")
+                print(f"{user}: {parameters}")
 
                 # sends NPC-message if threshold is crossed and NPC-messages enabled
-                threshold_crossed = self.chat_messages.add(parameters)
+                threshold_crossed = self.chat_messages.add(user, parameters)
                 if threshold_crossed and self.npc_response_enabled:
                     self.send_bot_message(self.chat_messages.get_npc_message())
+                    self.chat_messages.clear()
             case "PING":
                 # keep-alive message
                 self.send_server_message(f"PONG {parameters}")
@@ -135,6 +136,7 @@ class TwitchConnection:
         
     def parse_message(self, message: str):
         command = None
+        channel = None
         parameters = None
 
         index = 0
@@ -152,17 +154,17 @@ class TwitchConnection:
         if end_index < 0:
             end_index = len(message)
 
-        # command
-        command = message[index:end_index]
-        command_end = command.find(' ')
-        if 0 < command_end:
-            command = command[:command_end]     # removes possible channel / whitespace
+        # command & channel
+        command_parts = message[index:end_index].strip().split(' ')
+        command = command_parts[0]
+        if 1 < len(command_parts):
+            channel = command_parts[1]
 
         # parameters
         if index < end_index + 1:
             parameters = message[end_index + 1:len(message)]
 
-        return command, parameters
+        return command, channel, parameters
 
     def send_server_message(self, message):
         if not self.connected:
