@@ -2,20 +2,22 @@ from collections import deque, Counter
 
 class Messages:
     
-    npc_meter = 0               # % how much of queue messages are the most common word / word combo
-    npc_alert = False           # is NPC-meter over threshold (most common word has to also appear >1 times)
-    npc_threshold = 75          # >= what % NPC-meter sets alert
-    npc_message = ""            # the most common word / word combo
-    min_same_word_count = 10    # how many of the same word has to appear at least to alert
-    
+    npc_meter           = 0         # % how much of queue messages are the most common word / word combo
+    npc_alert           = False     # is NPC-meter over threshold (most common word has to also appear >1 times)
+    npc_threshold       = 75        # >= what % NPC-meter sets alert
+    npc_message         = ""        # the most common word / word combo
+    min_same_word_count = 3         # how many of the same word has to appear at least to alert
     
     def __init__(self, queue_length = 5):
         self.queue_length = queue_length
         self.message_queue = deque(maxlen=queue_length)
         self.word_counts = {}
 
-    def add(self, user: str, message: str):
-        # pops last message if queue is full
+    def add(self, user: str, message: str) -> bool:
+        """
+        Adds message to queue as the latest. Counts message words to user's word counts.
+        Pops last message if queue is full.
+        """
         if len(self.message_queue) == self.message_queue.maxlen:
             self.pop()
 
@@ -34,7 +36,10 @@ class Messages:
         return self.npc_alert
 
     def pop(self):
-        # return if queue is empty
+        """
+        Removes oldest message from queue and decreases its words from user's word counts.
+        Doesn't do anything if queue is empty.
+        """
         if len(self.message_queue) < 1:
             return
 
@@ -51,6 +56,10 @@ class Messages:
 
 
     def calculate_npc_meter(self):
+        """
+        Calculates % of unique chatters' messages in the queue that contain the most common word.
+        Updates NPC-message and -alert according to calculated %.
+        """
         # counts all unique words
         unique_words = Counter()
         for user_word_counts in self.word_counts.values():
@@ -68,9 +77,10 @@ class Messages:
         self.npc_alert = self.npc_threshold <= self.npc_meter and self.min_same_word_count <= highest_count
 
     def break_into_words(self, message: str):
-        return str(message).split()
+        return message.split()
 
     def clear(self):
+        """Clears messages, word counts and message related attributes."""
         self.message_queue.clear()
         self.word_counts.clear()
         self.npc_alert = False
@@ -78,6 +88,10 @@ class Messages:
         self.npc_meter = 0
 
     def set_queue_length(self, length: int):
+        """
+        Clears messages and creates new deque.
+        Previously queued messages are cleared.
+        """
         self.clear()
         self.message_queue = deque(maxlen=length)   # throws error if trying to set invalid
         self.queue_length = length
