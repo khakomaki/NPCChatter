@@ -4,8 +4,7 @@ class NPCChatter:
 
     same_word_count = 3
     history_size = 5
-    min_message_interval = 10
-    max_message_interval = 60
+    threshold = 75
 
     def __init__(self, connection: TwitchConnection):
         self.connection = connection
@@ -16,9 +15,9 @@ class NPCChatter:
             "INFO": NPCCommand(self.print_info, "lists current attribute values"),
             "HELP": NPCCommand(self.print_help, "lists all of the commands with help texts"),
             "HS": NPCCommand(self.set_history_size, "set history size, how many messages are stored until forgetting"),
-            "MAXD": NPCCommand(self.set_max_message_interval, "set maximum of random delay between messages"),
-            "MIND": NPCCommand(self.set_min_message_interval, "set minimum of random delay between messages"),
             "MSG": NPCCommand(self.send_message, "sends message to chat"),
+            "RSP": NPCCommand(self.toggle_response, "toggles npc-response on/off"),
+            "THR": NPCCommand(self.set_threshold, "sets threshold for sending npc message"),
             "WC": NPCCommand(self.set_same_word_count, "how many times a word has to at least appear to consider it npc"),
         }
 
@@ -30,11 +29,12 @@ class NPCChatter:
         self.set_num_attr("history_size", *args)
         self.connection.set_queue_length(self.history_size)
 
-    def set_min_message_interval(self, *args):
-        self.set_num_attr("min_message_interval", *args)
+    def set_threshold(self, *args):
+        self.set_num_attr("threshold", *args)
+        self.connection.set_threshold(self.threshold)
 
-    def set_max_message_interval(self, *args):
-        self.set_num_attr("max_message_interval", *args)
+    def toggle_response(self, *_):
+        self.connection.toggle_npc_response()
 
     def connect(self):
         self.connection.connect()
@@ -51,8 +51,7 @@ class NPCChatter:
         print("========== Chatter settings info ==========")
         print(f"Same word count: {self.same_word_count}")
         print(f"History size: {self.history_size}")
-        print(f"Minimum message interval: {self.min_message_interval}")
-        print(f"Maximum message interval: {self.max_message_interval}")
+        print(f"Threshold: {self.threshold}")
         print("========================================")
 
     def print_help(self, *_):
@@ -71,7 +70,7 @@ class NPCChatter:
         if len(args) < 1:
             raise NPCError("You forgot to give the value!")
 
-        user_value = args[0]    # resf of values are ignored
+        user_value = str(args[0])   # resf of values are ignored
         if not user_value.isdigit():
             raise NPCError(f"Given argument '{user_value}' isn't a number!")
 

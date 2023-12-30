@@ -201,14 +201,21 @@ class TwitchConnection:
         with self.thread_lock:
             return self.connected
 
-    def set_npc_response_enabled(self, enabled: bool):
-        self.npc_response_enabled = enabled
+    def toggle_npc_response(self):
+        if self.npc_response_enabled:
+            self.npc_response_enabled = False
+        else:
+            self.npc_response_enabled = True
+        print(f"NPC-response enabled: {self.npc_response_enabled}")
 
     def set_queue_length(self, length: int):
         self.chat_messages.set_queue_length(length)
 
     def set_min_same_word_count(self, count: int):
         self.chat_messages.set_min_same_word_count(count)
+
+    def set_threshold(self, percentage: int):
+        self.chat_messages.set_threshold(percentage)
 
     def sleep_and_disconnect(self):     # TODO delete
         time.sleep(30)
