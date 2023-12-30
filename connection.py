@@ -4,6 +4,8 @@ import certifi
 import threading
 import time
 import os
+import random
+from messages import Messages
 from dotenv import load_dotenv
 
 load_dotenv()   # loads .env variables
@@ -16,11 +18,18 @@ class TwitchConnection:
     connected = False
     connection = None
 
+    min_message_interval    = 10
+    random_wait_time_lower  = 0.1
+    random_wait_time_upper  = 2
+    last_bot_message_time   = 0
+    npc_response_enabled    = True
+
     def __init__(self):
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
         self.nickname = os.environ.get("NICKNAME")
         self.chat = os.environ.get("CHAT")
         self.thread_lock = threading.Lock()
+        self.chat_messages = Messages(5)
 
     def connect(self):
         if self.connected:
@@ -86,6 +95,11 @@ class TwitchConnection:
         match command:
             case "PRIVMSG":
                 print(f"User: {parameters}")
+
+                # sends NPC-message if threshold is crossed and NPC-messages enabled
+                threshold_crossed = self.chat_messages.add(parameters)
+                if threshold_crossed and self.npc_response_enabled:
+                    self.send_bot_message(self.chat_messages.get_npc_message())
             case "PING":
                 # keep-alive message
                 self.send_server_message(f"PONG {parameters}")
@@ -160,6 +174,19 @@ class TwitchConnection:
 
     def send_chat_message(self, message):
         self.send_server_message(f"PRIVMSG #{self.nickname} :{message}")
+
+    def send_bot_message(self, message):
+        # random delay before sending message
+        random_wait_time = random.uniform(self.random_wait_time_lower, self.random_wait_time_upper)
+        time.sleep(random_wait_time)
+        
+        # sends message if there's enough time since last message
+        if self.last_bot_message_time + self.min_message_interval - time.time() < 0:
+            self.send_chat_message(message)
+            self.last_bot_message_time = time.time()
+
+    def set_npc_response_enabled(self, enabled: bool):
+        self.npc_response_enabled = enabled
 
     def print_info(self):               # TODO delete
         print(self.oauth)
