@@ -27,6 +27,7 @@ class NPCChatter:
 
     def set_history_size(self, *args):
         self.set_num_attr("history_size", *args)
+        self.connection.set_queue_length(self.history_size)
 
     def set_min_message_interval(self, *args):
         self.set_num_attr("min_message_interval", *args)

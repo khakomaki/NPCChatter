@@ -76,9 +76,6 @@ class Messages:
         self.npc_message = ""
         self.npc_meter = 0
 
-    def set_queue_length(self, length: int):
-        self.message_queue = deque(maxlen = length)
-
     def set_threshold(self, threshold: int):
         self.npc_threshold = threshold
 
