@@ -95,6 +95,13 @@ class TwitchConnection:
             case "PRIVMSG":
                 print(f"{user}: {parameters}")
 
+                # bot command
+                if parameters[0] == '!':
+                    command_end = parameters.find(' ')
+                    if command_end < 0:
+                        command_end = len(parameters)
+                    self.handle_bot_command(parameters[1:command_end].upper())
+
                 # sends NPC-message if threshold is crossed and NPC-messages enabled
                 threshold_crossed = self.chat_messages.add(user, parameters)
                 if threshold_crossed and self.npc_response_enabled:
@@ -175,6 +182,14 @@ class TwitchConnection:
             parameters = message[end_index + 1:len(message)]
 
         return nick, host, command, parameters
+    
+    def handle_bot_command(self, command):
+        match command:
+            case "NPC":
+                npc_meter = self.chat_messages.howNPC()
+                self.send_chat_message(f"NPC-meter: {npc_meter}%")
+            case _:
+                pass
 
     def send_server_message(self, message):
         if not self.is_connected():
