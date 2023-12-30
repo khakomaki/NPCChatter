@@ -2,14 +2,15 @@ from collections import deque, Counter
 
 class Messages:
     
-    npc_meter = 0           # % how much of queue messages are the most common word / word combo
-    npc_alert = False       # is NPC-meter over threshold (most common word has to also appear >1 times)
-    npc_threshold = 75      # >= what % NPC-meter sets alert
-    npc_message = ""        # the most common word / word combo
-    min_same_word_count = 3 # how many of the same word has to appear at least to alert
+    npc_meter = 0               # % how much of queue messages are the most common word / word combo
+    npc_alert = False           # is NPC-meter over threshold (most common word has to also appear >1 times)
+    npc_threshold = 75          # >= what % NPC-meter sets alert
+    npc_message = ""            # the most common word / word combo
+    min_same_word_count = 10    # how many of the same word has to appear at least to alert
     
     
-    def __init__(self, queue_length: int):
+    def __init__(self, queue_length = 5):
+        self.queue_length = queue_length
         self.message_queue = deque(maxlen=queue_length)
         self.word_counts = {}
 
@@ -76,10 +77,16 @@ class Messages:
         self.npc_message = ""
         self.npc_meter = 0
 
+    def set_queue_length(self, length: int):
+        self.clear()
+        self.message_queue = deque(maxlen=length)   # throws error if trying to set invalid
+        self.queue_length = length
+
     def set_threshold(self, threshold: int):
         self.npc_threshold = threshold
 
     def set_min_same_word_count(self, count: int):
+        self.clear()
         self.min_same_word_count = count
 
     def get_npc_message(self) -> str:

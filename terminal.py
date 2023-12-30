@@ -19,11 +19,12 @@ class NPCChatter:
             "MAXD": NPCCommand(self.set_max_message_interval, "set maximum of random delay between messages"),
             "MIND": NPCCommand(self.set_min_message_interval, "set minimum of random delay between messages"),
             "MSG": NPCCommand(self.send_message, "sends message to chat"),
-            "WC": NPCCommand(self.set_same_word_count, "how many times a word has to appear in a row to type the same"),
+            "WC": NPCCommand(self.set_same_word_count, "how many times a word has to at least appear to consider it npc"),
         }
 
     def set_same_word_count(self, *args):
         self.set_num_attr("same_word_count", *args)
+        self.connection.set_min_same_word_count(self.same_word_count)
 
     def set_history_size(self, *args):
         self.set_num_attr("history_size", *args)

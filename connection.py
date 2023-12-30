@@ -18,7 +18,6 @@ class TwitchConnection:
     connected = False
     connection = None
 
-    queue_length            = 5
     min_message_interval    = 10
     random_wait_time_lower  = 0.1
     random_wait_time_upper  = 2
@@ -30,7 +29,7 @@ class TwitchConnection:
         self.nickname = os.environ.get("NICKNAME")
         self.chat = os.environ.get("CHAT")
         self.thread_lock = threading.Lock()
-        self.chat_messages = Messages(self.queue_length)
+        self.chat_messages = Messages()
 
     def connect(self):
         if self.is_connected():
@@ -206,11 +205,10 @@ class TwitchConnection:
         self.npc_response_enabled = enabled
 
     def set_queue_length(self, length: int):
-        if length < 1:
-            raise TwitchConnectionError("Invalid queue length!")
+        self.chat_messages.set_queue_length(length)
 
-        # creates new Messages-queue with new length
-        self.queue_length = Messages(self.queue_length)
+    def set_min_same_word_count(self, count: int):
+        self.chat_messages.set_min_same_word_count(count)
 
     def sleep_and_disconnect(self):     # TODO delete
         time.sleep(30)
