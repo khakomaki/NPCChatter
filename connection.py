@@ -5,10 +5,15 @@ import threading
 import time
 import os
 import random
+import logging
 from messages import Messages
 from dotenv import load_dotenv
 
-load_dotenv()   # loads .env variables
+load_dotenv()               # loads .env variables
+logging.basicConfig(        # sets up logging configuration
+    level=logging.INFO,
+    format="%(message)s"
+    )
 
 class TwitchConnection:
 
@@ -62,7 +67,7 @@ class TwitchConnection:
         Doesn't close the connection, waits for server to send message.
         """
         if not self.is_connected():
-            print("Connection already closed")
+            logging.info("Connection already closed")
             return
 
         self.send_server_message(f"PART #{self.chat}")
@@ -75,8 +80,13 @@ class TwitchConnection:
             try:
                 self.connection.connect((self.SERVER, self.PORT))
                 self.connected = True
+
             except ssl.SSLError as exception:
-                print(f"Problems connecting to Twitch server: {exception}")
+                logging.error(f"Problems with SSL connecting to Twitch server: {exception}")
+                self.connected = False
+            
+            except socket.error as exception:
+                logging.error(f"Problems with socket connecting to Twitch server: {exception}")
                 self.connected = False
 
     def close_connection(self):
@@ -100,7 +110,7 @@ class TwitchConnection:
                 for message in messages:
                     if len(message) < 1:
                         continue
-                    # print(message)
+                    logging.debug(message)
                     self.process_message(message)
 
     def process_message(self, received_message):
@@ -111,23 +121,23 @@ class TwitchConnection:
 
         match command:
             case "PRIVMSG":
-                print(f"{user}: {parameters}")
+                logging.info(f"{user}: {parameters}")
                 self.handle_bot_command(parameters)
                 self.handle_npc_messages(user, parameters)
             case "PING":
                 # keep-alive message
                 self.send_server_message(f"PONG {parameters}")
             case "PART":
-                print("Twitch closed connection")
+                logging.info("Twitch closed connection")
                 self.close_connection()
             case "NOTICE":
-                print("Twitch: failed to authenticate")
+                logging.warning("Twitch: failed to authenticate")
             case "JOIN":
-                print("Joined channel")
+                logging.info(f"Joined channel #{self.chat}")
             case "421":
-                print("Twitch: unsupported IRC command")
+                logging.warning("Twitch: unsupported IRC command")
             case "001":
-                print("Authentication successful")
+                logging.info("Authentication successful")
             case "002":
                 pass
             case "003":
@@ -145,7 +155,7 @@ class TwitchConnection:
             case "376":
                 pass
             case _:
-                print(f"Unexpected command: {command}")
+                logging.warning(f"Unexpected command: {command}")
         
     def parse_message(self, message: str):
         """
@@ -261,7 +271,7 @@ class TwitchConnection:
 
     def toggle_npc_response(self):
         self.npc_response_enabled = not self.npc_response_enabled
-        print(f"NPC-response enabled: {self.npc_response_enabled}")
+        logging.info(f"NPC-response enabled: {self.npc_response_enabled}")
 
     def set_queue_length(self, length: int):
         self.chat_messages.set_queue_length(length)
