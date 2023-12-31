@@ -28,6 +28,9 @@ class TwitchConnection:
     random_wait_time_upper  = 2
     last_bot_message_time   = 0
     npc_response_enabled    = True
+    last_bot_message        = ""
+    same_message_count      = 0
+    max_same_message_count  = 1
 
     def __init__(self):
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
@@ -259,11 +262,24 @@ class TwitchConnection:
         # random delay before sending message
         random_wait_time = random.uniform(self.random_wait_time_lower, self.random_wait_time_upper)
         time.sleep(random_wait_time)
+
+        # updates bot message information
+        if message == self.last_bot_message:
+            self.same_message_count += 1
+        else:
+            self.same_message_count = 1
+            self.last_bot_message = message
+            
+        # doesnt't send if it would exceed maximum same message count
+        if self.max_same_message_count < self.same_message_count:
+            return
         
-        # sends message if there's enough time since last message
-        if self.last_bot_message_time + self.min_message_interval - time.time() < 0:
-            self.send_chat_message(message)
-            self.last_bot_message_time = time.time()
+        # doesn't send if there's not enough time since last message
+        if 0 <= self.last_bot_message_time + self.min_message_interval - time.time():
+            return
+
+        self.send_chat_message(message)
+        self.last_bot_message_time = time.time()
 
     def is_connected(self):
         with self.thread_lock:
