@@ -8,6 +8,7 @@ logging.basicConfig(        # sets up logging configuration
 
 class NPCChatter:
 
+    max_same_bot_message = 3
     same_word_count = 3
     history_size = 5
     threshold = 75
@@ -21,6 +22,7 @@ class NPCChatter:
             "INFO": NPCCommand(self.print_info, "lists current attribute values"),
             "HELP": NPCCommand(self.print_help, "lists all of the commands with help texts"),
             "HS": NPCCommand(self.set_history_size, "set history size, how many messages are stored until forgetting"),
+            "MAXM": NPCCommand(self.set_max_same_message, "sets the maximum of the same bot message"),
             "MSG": NPCCommand(self.send_message, "sends message to chat"),
             "RSP": NPCCommand(self.toggle_response, "toggles npc-response on/off"),
             "THR": NPCCommand(self.set_threshold, "sets threshold for sending npc message"),
@@ -41,6 +43,10 @@ class NPCChatter:
 
     def toggle_response(self, *_):
         self.connection.toggle_npc_response()
+
+    def set_max_same_message(self, *args):
+        self.set_num_attr("max_same_bot_message", *args)
+        self.connection.set_max_same_bot_message_count(self.max_same_bot_message)
 
     def connect(self):
         self.connection.connect()

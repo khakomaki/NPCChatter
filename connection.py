@@ -30,7 +30,7 @@ class TwitchConnection:
     npc_response_enabled    = True
     last_bot_message        = ""
     same_message_count      = 0
-    max_same_message_count  = 1
+    max_same_message_count  = 3
 
     def __init__(self):
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
@@ -297,6 +297,9 @@ class TwitchConnection:
 
     def set_threshold(self, percentage: int):
         self.chat_messages.set_threshold(percentage)
+
+    def set_max_same_bot_message_count(self, count: int):
+        self.max_same_message_count = count
 
     def sleep_and_disconnect(self):     # TODO delete
         time.sleep(30)
