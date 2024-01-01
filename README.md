@@ -8,7 +8,7 @@ See "[NPC](#npc)".
 
 ## Abilities
 
-- Call out chat for being too NPC by mimicking the its behaviour
+- Call out chat for being too NPC by mimicking its behaviour
     - adjustable for different chats
     - adjustable for avoiding bot from spamming
 - Calculate chat's NPC-meter
@@ -80,12 +80,13 @@ Maximum same message set to [3]
 > thr 65
 Threshold set to [65]
 > info
-==== Chatter settings info =====
-Minimum same word count     - 5
-Maximum bot same word count - 3
-History size                - 5
-Threshold                   - 65
-================================
+==== Chatter settings info ======
+Minimum same word count      - 5
+Maximum bot same word count  - 3
+Minimum bot message interval - 30
+History size                 - 5
+Threshold                    - 65
+=================================
 > disc
 Twitch closed connection
 > exit
