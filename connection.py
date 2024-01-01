@@ -40,9 +40,7 @@ class TwitchConnection:
         self.chat_messages = Messages()
 
     def connect(self):
-        """
-        Creates SSL socket, tries to establish SSL connection to the server, authenticate and join a chat.
-        """
+        """Creates SSL socket, tries to establish SSL connection to the server, authenticate and join a chat."""
         if self.is_connected():
             raise TwitchConnectionError("Connection is already established!")
 
@@ -76,9 +74,7 @@ class TwitchConnection:
         self.send_server_message(f"PART #{self.chat}")
 
     def open_connection(self):
-        """
-        Tries to open a connection to the server.
-        """
+        """Tries to open a connection to the server."""
         with self.thread_lock:  # locks threads during opening
             try:
                 self.connection.connect((self.SERVER, self.PORT))
@@ -93,9 +89,7 @@ class TwitchConnection:
                 self.connected = False
 
     def close_connection(self):
-        """
-        Closes connection to the server.
-        """
+        """Closes connection to the server."""
         with self.thread_lock:  # locks threads during closing
             self.connection.close()
             self.connected = False
@@ -117,9 +111,7 @@ class TwitchConnection:
                     self.process_message(message)
 
     def process_message(self, received_message):
-        """
-        Reacts to message according to parsed command.
-        """
+        """Reacts to message according to parsed command."""
         user, _, command, parameters = self.parse_message(received_message)
 
         match command:
@@ -161,9 +153,7 @@ class TwitchConnection:
                 logging.warning(f"Unexpected command: {command}")
         
     def parse_message(self, message: str):
-        """
-        Parses the given IRC message.
-        """
+        """Parses the given IRC message."""
         nick = None
         host = None
         command = None
@@ -207,9 +197,7 @@ class TwitchConnection:
         return nick, host, command, parameters
     
     def handle_bot_command(self, parameters: str):
-        """
-        Checks if the message is bot command, parses command part and executes command if found.
-        """
+        """Checks if the message is bot command, parses command part and executes command if found."""
         if parameters[0] == self.CHAT_COMMAND_SYMBOL:
             # parses command part
             command_end = parameters.find(' ')
@@ -227,9 +215,7 @@ class TwitchConnection:
                 pass
 
     def handle_npc_messages(self, user: str, parameters: str):
-        """
-        Adds message to queue, reacts to NPC-alert if NPC-messages are enabled.
-        """
+        """Adds message to queue, reacts to NPC-alert if NPC-messages are enabled."""
         threshold_crossed = self.chat_messages.add(user, parameters)
 
         # sends NPC-message if threshold is crossed and NPC-messages enabled
@@ -237,10 +223,8 @@ class TwitchConnection:
             self.send_bot_message(self.chat_messages.get_npc_message())
             self.chat_messages.clear()
 
-    def send_server_message(self, message):
-        """
-        Sends message to server. Ends every line with CR + LF.
-        """
+    def send_server_message(self, message: str):
+        """Sends message to server. Ends every line with CR + LF."""
         if not self.is_connected():
             raise TwitchConnectionError("Can't send messages because connection isn't established!")
 
@@ -248,13 +232,18 @@ class TwitchConnection:
         with self.thread_lock:
             self.connection.send(f"{message}\r\n".encode("utf-8"))
 
-    def send_chat_message(self, message):
-        """
-        Sends message to Twitch chat.
-        """
-        self.send_server_message(f"PRIVMSG #{self.nickname} :{message}")
+    def send_chat_message(self, message: str):
+        """Sends message to Twitch chat."""
 
-    def send_bot_message(self, message):
+        # updates bot message information
+        self.update_last_bot_message(message)
+        
+        # sends if ok
+        if self.can_send():
+            self.send_server_message(f"PRIVMSG #{self.nickname} :{message}")
+            self.last_bot_message_time = time.time()
+
+    def send_bot_message(self, message: str):
         """
         Same as sending chat message, but prevents sending messages too frequently.
         Preferred for automated messages.
@@ -263,23 +252,26 @@ class TwitchConnection:
         random_wait_time = random.uniform(self.random_wait_time_lower, self.random_wait_time_upper)
         time.sleep(random_wait_time)
 
-        # updates bot message information
+        # sends as chat message
+        self.send_chat_message(message)
+
+    def update_last_bot_message(self, message: str):
         if message == self.last_bot_message:
             self.same_message_count += 1
         else:
             self.same_message_count = 1
             self.last_bot_message = message
-            
+
+    def can_send(self) -> bool:
         # doesnt't send if it would exceed maximum same message count
         if self.max_same_message_count < self.same_message_count:
-            return
+            return False
         
         # doesn't send if there's not enough time since last message
         if 0 <= self.last_bot_message_time + self.min_message_interval - time.time():
-            return
-
-        self.send_chat_message(message)
-        self.last_bot_message_time = time.time()
+            return False
+        
+        return True
 
     def is_connected(self):
         with self.thread_lock:
