@@ -116,7 +116,7 @@ class TwitchConnection:
 
         match command:
             case "PRIVMSG":
-                logging.info(f"{user}: {parameters}")
+                logging.debug(f"{user}: {parameters}")
                 self.handle_bot_command(parameters)
                 self.handle_npc_messages(user, parameters)
             case "PING":
