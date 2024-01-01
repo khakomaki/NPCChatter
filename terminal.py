@@ -24,28 +24,23 @@ class NPCChatter:
         }
 
     def set_npc_word_count(self, *args):
-        count = self.get_first_attr(*args)
-        self.connection.set_min_same_word_count(self.parse_positive_number(count))
+        self.connection.set_min_same_word_count(self.get_first_num_attr(*args))
         logging.info(f"Minimum same word count set to [{self.connection.get_min_same_word_count()}]")
 
     def set_history_size(self, *args):
-        length = self.get_first_attr(*args)
-        self.connection.set_queue_length(self.parse_positive_number(length))
+        self.connection.set_queue_length(self.get_first_num_attr(*args))
         logging.info(f"History size set to [{self.connection.get_queue_length()}]")
 
     def set_threshold(self, *args):
-        percentage = self.get_first_attr(*args)
-        self.connection.set_threshold(self.parse_positive_number(percentage))
+        self.connection.set_threshold(self.get_first_num_attr(*args))
         logging.info(f"Threshold set to [{self.connection.get_threshold()}]")
 
     def set_max_same_message(self, *args):
-        count = self.get_first_attr(*args)
-        self.connection.set_max_same_bot_message_count(self.parse_positive_number(count))
+        self.connection.set_max_same_bot_message_count(self.get_first_num_attr(*args))
         logging.info(f"Maximum same message set to [{self.connection.get_max_same_bot_message_count()}]")
 
     def set_min_interval(self, *args):
-        interval = self.parse_positive_number(self.get_first_attr(*args))
-        self.connection.set_min_bot_message_interval(interval)
+        self.connection.set_min_bot_message_interval(self.get_first_num_attr(*args))
         logging.info(f"Minimum bot message interval set to [{self.connection.get_min_bot_message_interval()}]")
 
     def toggle_response(self, *_):
@@ -110,10 +105,10 @@ class NPCChatter:
         
         return user_value
     
-    def get_first_attr(self, *args) -> str:
+    def get_first_num_attr(self, *args) -> int:
         if len(args) < 1:
             raise NPCError("You forgot to give the value!")
-        return str(args[0])
+        return self.parse_positive_number(args[0])
 
     def exit(self):
         self.disconnect()
