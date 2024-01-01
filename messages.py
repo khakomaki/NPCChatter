@@ -7,9 +7,9 @@ class Messages:
     npc_alert           = False     # is NPC-meter over threshold (most common word has to also appear >1 times)
     npc_threshold       = 75        # >= what % NPC-meter sets alert
     npc_message         = ""        # the most common word / word combo
-    min_same_word_count = 3         # how many of the same word has to appear at least to alert
+    min_same_word_count = 5         # how many of the same word has to appear at least to alert
     
-    def __init__(self, queue_length = 5):
+    def __init__(self, queue_length = 10):
         self.queue_length = queue_length
         self.message_queue = deque(maxlen=queue_length)
         self.word_counts: Dict[str, Counter] = {}
@@ -112,12 +112,21 @@ class Messages:
         self.message_queue = deque(maxlen=length)   # throws error if trying to set invalid
         self.queue_length = length
 
+    def get_queue_length(self) -> int:
+        return self.message_queue.maxlen
+
     def set_threshold(self, threshold: int):
         self.npc_threshold = threshold
+
+    def get_threshold(self) -> int:
+        return self.npc_threshold
 
     def set_min_same_word_count(self, count: int):
         self.clear()
         self.min_same_word_count = count
+
+    def get_min_same_word_count(self) -> int:
+        return self.min_same_word_count
 
     def get_npc_message(self) -> str:
         return self.npc_message

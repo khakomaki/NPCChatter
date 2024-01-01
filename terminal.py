@@ -1,17 +1,10 @@
 from connection import *
 import logging
 
-logging.basicConfig(        # sets up logging configuration
-    level=logging.INFO,
-    format="%(message)s"
-    )
+# sets up logging configuration
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 class NPCChatter:
-
-    max_same_bot_message = 3
-    same_word_count = 3
-    history_size = 5
-    threshold = 75
 
     def __init__(self, connection: TwitchConnection):
         self.connection = connection
@@ -26,27 +19,31 @@ class NPCChatter:
             "MSG": NPCCommand(self.send_message, "sends message to chat"),
             "RSP": NPCCommand(self.toggle_response, "toggles npc-response on/off"),
             "THR": NPCCommand(self.set_threshold, "sets threshold for sending npc message"),
-            "WC": NPCCommand(self.set_same_word_count, "how many times a word has to at least appear to consider it npc"),
+            "WC": NPCCommand(self.set_npc_word_count, "how many times a word has to at least appear to consider it npc"),
         }
 
-    def set_same_word_count(self, *args):
-        self.set_num_attr("same_word_count", *args)
-        self.connection.set_min_same_word_count(self.same_word_count)
+    def set_npc_word_count(self, *args):
+        count = self.get_first_attr(*args)
+        self.connection.set_min_same_word_count(self.parse_positive_number(count))
+        logging.info(f"Minimum same word count set to [{self.connection.get_min_same_word_count()}]")
 
     def set_history_size(self, *args):
-        self.set_num_attr("history_size", *args)
-        self.connection.set_queue_length(self.history_size)
+        length = self.get_first_attr(*args)
+        self.connection.set_queue_length(self.parse_positive_number(length))
+        logging.info(f"History size set to [{self.connection.get_queue_length()}]")
 
     def set_threshold(self, *args):
-        self.set_num_attr("threshold", *args)
-        self.connection.set_threshold(self.threshold)
+        percentage = self.get_first_attr(*args)
+        self.connection.set_threshold(self.parse_positive_number(percentage))
+        logging.info(f"Threshold set to [{self.connection.get_threshold()}]")
+
+    def set_max_same_message(self, *args):
+        count = self.get_first_attr(*args)
+        self.connection.set_max_same_bot_message_count(self.parse_positive_number(count))
+        logging.info(f"Maximum same message set to [{self.connection.get_max_same_bot_message_count()}]")
 
     def toggle_response(self, *_):
         self.connection.toggle_npc_response()
-
-    def set_max_same_message(self, *args):
-        self.set_num_attr("max_same_bot_message", *args)
-        self.connection.set_max_same_bot_message_count(self.max_same_bot_message)
 
     def connect(self):
         self.connection.connect()
@@ -61,9 +58,10 @@ class NPCChatter:
 
     def print_info(self, *_):
         attributes = [
-            ("Same word count", str(self.same_word_count)),
-            ("History size", str(self.history_size)),
-            ("Threshold", str(self.threshold))
+            ("Minimum same word count", str(self.connection.get_min_same_word_count())),
+            ("Maximum bot same word count", str(self.connection.get_max_same_bot_message_count())),
+            ("History size", str(self.connection.get_queue_length())),
+            ("Threshold", str(self.connection.get_threshold()))
         ]
         self.print_text_box("Chatter settings info", attributes)
 
@@ -96,26 +94,20 @@ class NPCChatter:
         # footer bar
         logging.info('=' * max_line_length)
 
-    def set_num_attr(self, attribute_name, *args):
-        if not (hasattr(self, attribute_name)):
-            raise NPCError(f"Given attribute '{attribute_name}' doesn't exist!")
-
-        if not isinstance(attribute_name, str):
-            raise NPCError("Given attribute name isn't a string!")
-
-        if len(args) < 1:
-            raise NPCError("You forgot to give the value!")
-
-        user_value = str(args[0])   # resf of values are ignored
+    def parse_positive_number(self, string: str) -> int:
         try:
-            user_value = int(user_value)
+            user_value = int(string)
             if user_value < 1:
                 raise NPCError(f"Given value '{user_value}' is invalid!")
         except ValueError:
             raise NPCError(f"Given argument '{user_value}' isn't a number!")
-
-        setattr(self, attribute_name, user_value)
-        logging.info(f"{attribute_name.upper()} set to [{getattr(self, attribute_name)}]")
+        
+        return user_value
+    
+    def get_first_attr(self, *args) -> str:
+        if len(args) < 1:
+            raise NPCError("You forgot to give the value!")
+        return str(args[0])
 
     def exit(self):
         self.disconnect()

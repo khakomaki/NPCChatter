@@ -9,11 +9,11 @@ import logging
 from messages import Messages
 from dotenv import load_dotenv
 
-load_dotenv()               # loads .env variables
-logging.basicConfig(        # sets up logging configuration
-    level=logging.INFO,
-    format="%(message)s"
-    )
+# loads .env variables
+load_dotenv()
+
+# sets up logging configuration
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 class TwitchConnection:
 
@@ -23,14 +23,14 @@ class TwitchConnection:
 
     connected               = False
     connection              = None
-    min_message_interval    = 10
+    min_message_interval    = 30
     random_wait_time_lower  = 0.1
     random_wait_time_upper  = 2
     last_bot_message_time   = 0
     npc_response_enabled    = True
     last_bot_message        = ""
     same_message_count      = 0
-    max_same_message_count  = 3
+    max_same_message_count  = 1
 
     def __init__(self):
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
@@ -292,14 +292,26 @@ class TwitchConnection:
     def set_queue_length(self, length: int):
         self.chat_messages.set_queue_length(length)
 
+    def get_queue_length(self) -> int:
+        return self.chat_messages.get_queue_length()
+
     def set_min_same_word_count(self, count: int):
         self.chat_messages.set_min_same_word_count(count)
+
+    def get_min_same_word_count(self) -> int:
+        return self.chat_messages.get_min_same_word_count()
 
     def set_threshold(self, percentage: int):
         self.chat_messages.set_threshold(percentage)
 
+    def get_threshold(self) -> int:
+        return self.chat_messages.get_threshold()
+
     def set_max_same_bot_message_count(self, count: int):
         self.max_same_message_count = count
+
+    def get_max_same_bot_message_count(self) -> int:
+        return self.max_same_message_count
 
     def sleep_and_disconnect(self):     # TODO delete
         time.sleep(30)
