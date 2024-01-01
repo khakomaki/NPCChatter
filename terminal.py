@@ -16,6 +16,7 @@ class NPCChatter:
             "HELP": NPCCommand(self.print_help, "lists all of the commands with help texts"),
             "HS": NPCCommand(self.set_history_size, "set history size, how many messages are stored until forgetting"),
             "MAXM": NPCCommand(self.set_max_same_message, "sets the maximum of the same bot message"),
+            "MINI": NPCCommand(self.set_min_interval, "sets the minimum interval between bot messages"),
             "MSG": NPCCommand(self.send_message, "sends message to chat"),
             "RSP": NPCCommand(self.toggle_response, "toggles npc-response on/off"),
             "THR": NPCCommand(self.set_threshold, "sets threshold for sending npc message"),
@@ -41,6 +42,11 @@ class NPCChatter:
         count = self.get_first_attr(*args)
         self.connection.set_max_same_bot_message_count(self.parse_positive_number(count))
         logging.info(f"Maximum same message set to [{self.connection.get_max_same_bot_message_count()}]")
+
+    def set_min_interval(self, *args):
+        interval = self.parse_positive_number(self.get_first_attr(*args))
+        self.connection.set_min_bot_message_interval(interval)
+        logging.info(f"Minimum bot message interval set to [{self.connection.get_min_bot_message_interval()}]")
 
     def toggle_response(self, *_):
         self.connection.toggle_npc_response()

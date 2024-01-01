@@ -304,6 +304,12 @@ class TwitchConnection:
 
     def get_max_same_bot_message_count(self) -> int:
         return self.max_same_message_count
+    
+    def set_min_bot_message_interval(self, interval: int):
+        self.min_message_interval = interval
+
+    def get_min_bot_message_interval(self) -> int:
+        return self.min_message_interval
 
     def sleep_and_disconnect(self):     # TODO delete
         time.sleep(30)
