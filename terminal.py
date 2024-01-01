@@ -61,6 +61,7 @@ class NPCChatter:
         attributes = [
             ("Minimum same word count", str(self.connection.get_min_same_word_count())),
             ("Maximum bot same word count", str(self.connection.get_max_same_bot_message_count())),
+            ("Minimum bot message interval", str(self.connection.get_min_bot_message_interval())),
             ("History size", str(self.connection.get_queue_length())),
             ("Threshold", str(self.connection.get_threshold()))
         ]
