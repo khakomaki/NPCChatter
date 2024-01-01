@@ -47,7 +47,7 @@ Twitch OAuth token: [Getting token](https://dev.twitch.tv/docs/authentication/ge
 What you need to have installed to run NPCChatter:
 
 - Python (recommended >=3.11)
-- python specific requirements listed in [requirements.txt](.requirements.txt)
+- python specific requirements listed in [requirements.txt](requirements.txt)
 
 Requirements can be installed running the following pip command in terminal:
 
