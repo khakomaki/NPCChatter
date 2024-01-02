@@ -6,6 +6,7 @@ import time
 import os
 import random
 import logging
+import requests
 from messages import Messages
 from dotenv import load_dotenv
 
@@ -13,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # sets up logging configuration
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 class TwitchConnection:
 
@@ -36,8 +37,12 @@ class TwitchConnection:
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
         self.nickname = os.environ.get("NICKNAME")
         self.chat = os.environ.get("CHAT")
+        self.client_id = os.environ.get("CLIENT_ID")
         self.thread_lock = threading.Lock()
         self.chat_messages = Messages()
+
+        self.broadcaster_id = self.get_broadcaster_id()
+        self.avoid_words = self.get_channel_emotes(self.broadcaster_id)
 
     def connect(self):
         """Creates SSL socket, tries to establish SSL connection to the server, authenticate and join a chat."""
@@ -239,8 +244,8 @@ class TwitchConnection:
         self.update_last_bot_message(message)
         
         # sends if ok
-        if self.can_send():
-            self.send_server_message(f"PRIVMSG #{self.nickname} :{message}")
+        if self.can_send(message):
+            self.send_server_message(f"PRIVMSG #{self.chat} :{message}")
             self.last_bot_message_time = time.time()
 
     def send_bot_message(self, message: str):
@@ -262,7 +267,7 @@ class TwitchConnection:
             self.same_message_count = 1
             self.last_bot_message = message
 
-    def can_send(self) -> bool:
+    def can_send(self, message: str) -> bool:
         # doesnt't send if it would exceed maximum same message count
         if self.max_same_message_count < self.same_message_count:
             return False
@@ -271,7 +276,49 @@ class TwitchConnection:
         if 0 <= self.last_bot_message_time + self.min_message_interval - time.time():
             return False
         
+        # doesn't send if the message contains avoidable word
+        if message.split(' ')[0] in self.avoid_words:
+            return False
+        
         return True
+    
+    def get_channel_emotes(self, broadcaster_id: str) -> list:
+        # sends request for channel emote info
+        url = f"https://api.twitch.tv/helix/chat/emotes?broadcaster_id={broadcaster_id}"
+        headers = {
+            "Authorization": f"Bearer {self.oauth}",
+            "Client-ID": self.client_id
+        }
+        response = requests.get(url, headers=headers)
+
+        # parses response for channel emotes
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                return [emote["emote_name"] for emote in data.get("data", [])]
+            else:
+                raise TwitchConnectionError(f"Problems getting channel emotes: {response.status_code}")
+
+
+    def get_broadcaster_id(self) -> str:
+        # sends request for broadcaster info
+        url = f"https://api.twitch.tv/helix/users?login={self.chat}"
+        headers = {
+            "Authorization": f"Bearer {self.oauth}",
+            "Client-ID": self.client_id
+        }
+        response = requests.get(url, headers=headers)
+
+        # parses response for id
+        if response.status_code == 200:
+            data = response.json().get("data", [])
+            if data:
+                return str(data[0]["id"])
+            else:
+                raise TwitchConnectionError(f"Couldn't get channel id for #{self.chat}")
+        else:
+            raise TwitchConnectionError(f"Problems getting channel id: {response.status_code}")
+
 
     def is_connected(self):
         with self.thread_lock:

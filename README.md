@@ -33,11 +33,12 @@ git clone https://github.com/khakomaki/NPCChatter.git .
 OAUTH_TOKEN_TWITCH=your_bots_twitch_oauth_token
 NICKNAME=your_bots_channel
 CHAT=example_channel
+CLIENT_ID=your_bots_client_id
 ```
 
 (replace with your own values)
 
-Twitch OAuth token: [Getting token](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/)
+[Getting client_id & OAuth token](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/)
 
 - Done!
 
