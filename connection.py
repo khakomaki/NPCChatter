@@ -217,7 +217,8 @@ class TwitchConnection:
         match bot_command:
             case "NPC":
                 npc_meter = self.chat_messages.howNPC()
-                self.send_chat_message(f"NPC-meter: {npc_meter}%")
+                unique_chatters = self.chat_messages.get_unique_chatters()
+                self.send_chat_message(f"NPC-meter: {npc_meter}% (last {unique_chatters} unique chatters)")
             case _:
                 pass
 

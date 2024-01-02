@@ -8,6 +8,7 @@ class Messages:
     npc_threshold       = 75        # >= what % NPC-meter sets alert
     npc_message         = ""        # the most common word / word combo
     min_same_word_count = 5         # how many of the same word has to appear at least to alert
+    unique_chatters     = 0         # how many different users have chats in the queue
     
     def __init__(self, queue_length = 10):
         self.queue_length = queue_length
@@ -73,8 +74,8 @@ class Messages:
         most_npc_word, highest_count = unique_words.most_common(1)[0] # gives list of tuples, 0 is on top of the list
 
         # updates NPC-meter
-        unique_chatters = len(self.word_counts)
-        self.npc_meter = (highest_count / unique_chatters) * 100
+        self.unique_chatters = len(self.word_counts)
+        self.npc_meter = (highest_count / self.unique_chatters) * 100
         
         # finds how many times the most common word appears the most
         npc_word_counts = {}
@@ -136,6 +137,9 @@ class Messages:
 
     def howNPC(self) -> int:
         return self.npc_meter
+    
+    def get_unique_chatters(self) -> int:
+        return self.unique_chatters
 
 
 if __name__ == "__main__":
