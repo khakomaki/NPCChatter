@@ -6,7 +6,7 @@ Focused on chat messages' similarity or "NPCness" as some would say.
 
 See "[NPC](#npc)".
 
-## Abilities
+## Features
 
 - Call out chat for being too NPC by mimicking its behaviour
     - adjustable for different chats
@@ -88,6 +88,14 @@ Minimum bot message interval - 30
 History size                 - 5
 Threshold                    - 65
 =================================
+Sent message: 'D:'
+Sent message: 'KEKW KEKW KEKW'
+Sent message: 'Aware'
+Sent message: 'OK'
+Sent message: 'NO'
+Sent message: 'BASED'
+Sent message: 'NO'
+Sent message: 'RIGGED'
 > disc
 Twitch closed connection
 > exit
