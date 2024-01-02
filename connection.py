@@ -45,9 +45,6 @@ class TwitchConnection:
 
         self.broadcaster_id = self.get_broadcaster_id()
         self.channel_sub_emotes, self.channel_follower_emotes = self.get_channel_emotes(self.broadcaster_id)
-        print(self.broadcaster_id)
-        print(self.channel_sub_emotes)
-        print(self.channel_follower_emotes)
 
     def connect(self):
         """Creates SSL socket, tries to establish SSL connection to the server, authenticate and join a chat."""
@@ -352,6 +349,14 @@ class TwitchConnection:
     def toggle_npc_response(self):
         self.npc_response_enabled = not self.npc_response_enabled
         logging.info(f"NPC-response enabled: {self.npc_response_enabled}")
+
+    def toggle_sub_emotes(self):
+        self.sub_emotes_enabled = not self.sub_emotes_enabled
+        logging.info(f"Sub emote response enabled: {self.sub_emotes_enabled}")
+
+    def toggle_follower_emotes(self):
+        self.follower_emotes_enabled = not self.follower_emotes_enabled
+        logging.info(f"Follower emote response enabled: {self.follower_emotes_enabled}")
 
     def set_queue_length(self, length: int):
         self.chat_messages.set_queue_length(length)

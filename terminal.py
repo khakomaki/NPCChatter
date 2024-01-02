@@ -12,6 +12,8 @@ class NPCChatter:
             "CON": NPCCommand(self.connect, "connects to chat"),
             "DISC": NPCCommand(self.disconnect, "disconnects from chat"),
             "EXIT": NPCCommand(self.exit, "closes the NPCChatter"),
+            "FOL": NPCCommand(self.toggle_follower_emote, "toggles follower emote responses on/off"),
+            "SUB": NPCCommand(self.toggle_sub_response, "toggles sub emote responses on/off"),
             "INFO": NPCCommand(self.print_info, "lists current attribute values"),
             "HELP": NPCCommand(self.print_help, "lists all of the commands with help texts"),
             "HS": NPCCommand(self.set_history_size, "set history size, how many messages are stored until forgetting"),
@@ -45,6 +47,12 @@ class NPCChatter:
 
     def toggle_response(self, *_):
         self.connection.toggle_npc_response()
+
+    def toggle_sub_response(self, *_):
+        self.connection.toggle_sub_emotes()
+
+    def toggle_follower_emote(self, *_):
+        self.connection.toggle_follower_emotes()
 
     def connect(self):
         self.connection.connect()
