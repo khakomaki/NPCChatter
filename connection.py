@@ -25,8 +25,6 @@ class TwitchConnection:
     connected               = False
     connection              = None
     min_message_interval    = 30
-    random_wait_time_lower  = 0.1
-    random_wait_time_upper  = 2
     last_bot_message_time   = 0
     npc_response_enabled    = True
     last_bot_message        = ""
@@ -228,7 +226,7 @@ class TwitchConnection:
 
         # sends NPC-message if threshold is crossed and NPC-messages enabled
         if threshold_crossed and self.npc_response_enabled:
-            self.send_bot_message(self.chat_messages.get_npc_message())
+            self.send_chat_message(self.chat_messages.get_npc_message())
             self.chat_messages.clear()
 
     def send_server_message(self, message: str):
@@ -251,18 +249,6 @@ class TwitchConnection:
             self.send_server_message(f"PRIVMSG #{self.chat} :{message}")
             self.last_bot_message_time = time.time()
             logging.info(f"Sent message: '{message}'")
-
-    def send_bot_message(self, message: str):
-        """
-        Same as sending chat message, but prevents sending messages too frequently.
-        Preferred for automated messages.
-        """
-        # random delay before sending message
-        random_wait_time = random.uniform(self.random_wait_time_lower, self.random_wait_time_upper)
-        time.sleep(random_wait_time)
-
-        # sends as chat message
-        self.send_chat_message(message)
 
     def update_last_bot_message(self, message: str):
         if message == self.last_bot_message:
