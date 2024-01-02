@@ -6,6 +6,9 @@ class Messages:
     npc_meter           = 0         # % how much of queue messages are the most common word / word combo
     npc_alert           = False     # is NPC-meter over threshold (most common word has to also appear >1 times)
     npc_threshold       = 75        # >= what % NPC-meter sets alert
+    npc_word            = ""        # the most common word
+    npc_word_count      = 0         # how many times most common word occurs in queue
+    npc_word_mfc        = 0         # how many times most common word occurs most frequently
     npc_message         = ""        # the most common word / word combo
     min_same_word_count = 5         # how many of the same word has to appear at least to alert
     unique_chatters     = 0         # how many different users have chats in the queue
@@ -32,8 +35,8 @@ class Messages:
         # adds to queue
         self.message_queue.appendleft((user, words))
 
-        # recalculates NPC-meter
-        self.calculate_npc_meter()
+        # updates info
+        self.update_messages_info()
 
         return self.npc_alert
 
@@ -57,41 +60,47 @@ class Messages:
             self.word_counts.pop(user, None)
 
 
-    def calculate_npc_meter(self):
-        """
-        Updates NPC-meter, NPC-message and NPC-alert.
+    def update_messages_info(self):
+        """Updates NPC-meter, NPC-message, NPC-word, NPC-word count, NPC-alert and unique chatters"""
+        self.update_npc_word()
+        self.update_npc_meter()
+        self.update_npc_message()
+        self.update_npc_alert()
 
-        NPC-message: most common word * most common times it appears in a message
-        NPC-meter: % of unique chatter's messages that contain most common word
-        NPC-alert: true if threshold =< NPC-meter
-        """
+    def update_npc_word(self):
+        """most common word in queue, how many of the messages contain it and most common times it appears in messages"""
         # counts all unique words
         unique_words = Counter()
         for user_word_counts in self.word_counts.values():
             unique_words.update(user_word_counts.keys())
 
-        # finds most common word
-        most_npc_word, highest_count = unique_words.most_common(1)[0] # gives list of tuples, 0 is on top of the list
+        # finds most common word and its count
+        self.npc_word, self.npc_word_count = unique_words.most_common(1)[0] # gives list of tuples, 0 is on top of the list
 
-        # updates NPC-meter
-        self.unique_chatters = len(self.word_counts)
-        self.npc_meter = (highest_count / self.unique_chatters) * 100
-        
         # finds how many times the most common word appears the most
         npc_word_counts = {}
         for user_word_counts in self.word_counts.values():
-            npc_word_count = user_word_counts.get(most_npc_word, 0)
+            npc_word_count = user_word_counts.get(self.npc_word, 0)
 
             # adds count if over 0
             if 0 < npc_word_count:
                 npc_word_counts[npc_word_count] = npc_word_counts.get(npc_word_count, 0) + 1
 
-        # updates NPC-message to most common word * most common count of it
-        most_frequent_count = max(npc_word_counts, key=npc_word_counts.get)
-        self.npc_message = ' '.join([most_npc_word] * most_frequent_count)
+        # updates most frequent count
+        self.npc_word_mfc = max(npc_word_counts, key=npc_word_counts.get)
+    
+    def update_npc_meter(self):
+        """% of unique chatters' messages that contain the most common word"""
+        self.unique_chatters = len(self.word_counts)
+        self.npc_meter = (self.npc_word_count / self.unique_chatters) * 100
 
-        # updates NPC-alert (bool threshold & count exceeded or same value)
-        self.npc_alert = self.npc_threshold <= self.npc_meter and self.min_same_word_count <= highest_count
+    def update_npc_message(self):
+        """most common word * most common times it appears in a message"""
+        self.npc_message = ' '.join([self.npc_word] * self.npc_word_mfc)
+
+    def update_npc_alert(self):
+        """true if threshold and minimum same word count are exceeded"""
+        self.npc_alert = self.npc_threshold <= self.npc_meter and self.min_same_word_count <= self.npc_word_count
 
     def break_into_words(self, message: str):
         return message.split()
@@ -140,6 +149,9 @@ class Messages:
     
     def get_unique_chatters(self) -> int:
         return self.unique_chatters
+    
+    def get_npc_word(self) -> str:
+        return self.npc_word
 
 
 if __name__ == "__main__":
