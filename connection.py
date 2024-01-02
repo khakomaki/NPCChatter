@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # sets up logging configuration
-logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 class TwitchConnection:
 
@@ -32,6 +32,8 @@ class TwitchConnection:
     last_bot_message        = ""
     same_message_count      = 0
     max_same_message_count  = 1
+    sub_emotes_enabled      = False
+    follower_emotes_enabled = True
 
     def __init__(self):
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
@@ -42,7 +44,10 @@ class TwitchConnection:
         self.chat_messages = Messages()
 
         self.broadcaster_id = self.get_broadcaster_id()
-        self.avoid_words = self.get_channel_emotes(self.broadcaster_id)
+        self.channel_sub_emotes, self.channel_follower_emotes = self.get_channel_emotes(self.broadcaster_id)
+        print(self.broadcaster_id)
+        print(self.channel_sub_emotes)
+        print(self.channel_follower_emotes)
 
     def connect(self):
         """Creates SSL socket, tries to establish SSL connection to the server, authenticate and join a chat."""
@@ -247,6 +252,7 @@ class TwitchConnection:
         if self.can_send(message):
             self.send_server_message(f"PRIVMSG #{self.chat} :{message}")
             self.last_bot_message_time = time.time()
+            logging.info(f"Sent message: '{message}'")
 
     def send_bot_message(self, message: str):
         """
@@ -276,13 +282,19 @@ class TwitchConnection:
         if 0 <= self.last_bot_message_time + self.min_message_interval - time.time():
             return False
         
-        # doesn't send if the message contains avoidable word
-        if message.split(' ')[0] in self.avoid_words:
+        # doesn't send if the message contains sub emote
+        if not self.sub_emotes_enabled and message.split(' ')[0] in self.channel_sub_emotes:
+            logging.info("Didn't send message because it contains sub emote!")
+            return False
+        
+        # doesn't send if the message contains follower emote
+        if not self.follower_emotes_enabled and message.split(' ')[0] in self.channel_follower_emotes:
+            logging.info("Didn't send message because it contains follower emote!")
             return False
         
         return True
     
-    def get_channel_emotes(self, broadcaster_id: str) -> list:
+    def get_channel_emotes(self, broadcaster_id: str) -> list[tuple]:
         # sends request for channel emote info
         url = f"https://api.twitch.tv/helix/chat/emotes?broadcaster_id={broadcaster_id}"
         headers = {
@@ -295,7 +307,20 @@ class TwitchConnection:
         if response.status_code == 200:
             data = response.json()
             if data:
-                return [emote["emote_name"] for emote in data.get("data", [])]
+                sub_emotes = []
+                follower_emotes = []
+
+                # add sub emotes
+                for emote in data.get("data", []):
+                    emote_type = emote.get("emote_type", None)
+                    emote_name = emote.get("name", None)
+
+                    if emote_type == "subscriptions" and emote_name != None:
+                        sub_emotes.append(emote_name)
+
+                    if emote_type == "follower" and emote_name != None:
+                        follower_emotes.append(emote_name)
+                return sub_emotes, follower_emotes
             else:
                 raise TwitchConnectionError(f"Problems getting channel emotes: {response.status_code}")
 
