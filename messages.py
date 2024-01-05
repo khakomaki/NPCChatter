@@ -10,8 +10,11 @@ class Messages:
     npc_word_count      = 0         # how many times most common word occurs in queue
     npc_word_mfc        = 0         # how many times most common word occurs most frequently
     npc_message         = ""        # the most common word / word combo
-    min_same_word_count = 5         # how many of the same word has to appear at least to alert
+    min_same_word_count = 2         # how many of the same word has to appear at least to alert
     unique_chatters     = 0         # how many different users have chats in the queue
+
+    SAME_WORD_THRESHOLD = 75        # how many % same count to connect next most common word to NPC-word
+    SAME_FREQ_THRESHOLD = 75        # how many % same frequency to connect next most common word to NPC-word
     
     def __init__(self, queue_length = 10):
         self.queue_length = queue_length
@@ -74,21 +77,33 @@ class Messages:
         for user_word_counts in self.word_counts.values():
             unique_words.update(user_word_counts.keys())
 
+        # ordered list of most common words and the counts
+        most_common = unique_words.most_common()
+
         # finds most common word and its count
-        self.npc_word, self.npc_word_count = unique_words.most_common(1)[0] # gives list of tuples, 0 is on top of the list
+        self.npc_word, self.npc_word_count = most_common[0]
 
         # finds how many times the most common word appears the most
-        npc_word_counts = {}
+        self.npc_word_mfc = self.calculate_word_frequency(self.npc_word)
+
+        # adds to the NPC-word if fits to thresholds
+        for word, count in most_common[1:]:
+            if (self.SAME_WORD_THRESHOLD / 100) <= (count / self.npc_word_count):
+                if (self.SAME_FREQ_THRESHOLD / 100) <= (self.calculate_word_frequency(word) / self.npc_word_mfc):
+                    self.npc_word += f" {word}"
+    
+    def calculate_word_frequency(self, word: str) -> int:
+        """calculates how many times given word appears in user messages the most"""
+        word_counts = {}
         for user_word_counts in self.word_counts.values():
-            npc_word_count = user_word_counts.get(self.npc_word, 0)
+            word_count = user_word_counts.get(word, 0)
 
             # adds count if over 0
-            if 0 < npc_word_count:
-                npc_word_counts[npc_word_count] = npc_word_counts.get(npc_word_count, 0) + 1
+            if 0 < word_count:
+                word_counts[word_count] = word_counts.get(word_count, 0) + 1
 
-        # updates most frequent count
-        self.npc_word_mfc = max(npc_word_counts, key=npc_word_counts.get)
-    
+        return max(word_counts, key=word_counts.get)
+
     def update_npc_meter(self):
         """% of unique chatters' messages that contain the most common word"""
         self.unique_chatters = len(self.word_counts)
