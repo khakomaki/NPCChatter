@@ -1,18 +1,16 @@
 # NPCChatter
 
-Locally runnable bot for interacting with Twitch chat.
+Bot for interacting with Twitch chat.
 
-Focused on chat messages' similarity or "NPCness" as some would say.
-
-See "[NPC](#npc)".
+Focused on chat's [NPC](#npc)-behaviour (predictable & similar messages).
 
 ## Features
 
-- Call out chat for being too NPC by mimicking its behaviour
+- React to chat being too NPC by mimicking its behaviour
     - adjustable for different chats
     - adjustable for avoiding bot from spamming
-- Calculate chat's NPC-meter
-    - type "!npc" in chat for the bot to respond with current %
+- Enable chat commands
+    - type "!npc" in chat for the bot to respond with current NPC-meter-%
 - Terminal interface
     - attributes are easily controllable even during execution time
 
@@ -105,4 +103,4 @@ Connection already closed
 ## NPC
 <a name="npc"></a>
 
-Word "NPC" means "Non-Player Character" and comes from video game culture, but can also refer to a person who acts very predictably, like this bot.
+Word "NPC" comes from video game culture and is short for "Non-Player Character", but can also refer to a person acting so predictably that the person could as well be a bot.
