@@ -41,7 +41,7 @@ class MessagesQueue:
             str: Queue in a string form.
         """
 
-        return "\n".join(f"{user}: {user_message}" for user, user_message, _ in self.messages)
+        return "\n".join(f"{user}: {user_message}, {params}" for user, user_message, params in self.messages)
     
     def max_size(self) -> int:
         """
@@ -62,7 +62,7 @@ class MessagesQueue:
 
         return len(self.messages)
 
-    def add(self, username: str, message: str, parameters: dict = {}) -> bool:
+    def add(self, username: str, message: str, parameters: dict = None) -> bool:
         """
         Adds a message to the queue.
         Pops last message automatically if the queue is full.
@@ -88,6 +88,10 @@ class MessagesQueue:
                 # returns that queue was full without adding
                 return full
         
+        # creates a dictionary if there isn't yet
+        if parameters == None:
+            parameters = {}
+
         # adds word counts to parameters
         word_counts = Counter(message.split())
         parameters['word_counter'] = word_counts
@@ -146,49 +150,51 @@ class MessagesQueue:
         # replaces old queue with new
         self.messages = new_queue
 
-# full list
-messages = MessagesQueue(3)
-messages.add("user123", "hello")
-messages.add("Donald Duck", "hi", {"subscriber": True})
-messages.add("Mickey Mouse", "good evening")
-print(f"{messages}\n")
-print(f"max size of the queue: {messages.max_size()}")
-print(f"current count of the queue: {messages.count()}")
+if __name__ == '__main__':
+    
+    # full list
+    messages = MessagesQueue(3)
+    messages.add("user123", "hello")
+    messages.add("Donald Duck", "hi", {"subscriber": True})
+    messages.add("Mickey Mouse", "good evening")
+    print(f"{messages}\n")
+    print(f"max size of the queue: {messages.max_size()}")
+    print(f"current count of the queue: {messages.count()}")
 
-# add to full list (autopop on)
-messages.add("Donald Duck", "chatting chatting chatting...", {"subscriber": True})
-print(f"{messages}\n")
+    # add to full list (autopop on)
+    messages.add("Donald Duck", "chatting chatting chatting...", {"subscriber": True})
+    print(f"{messages}\n")
 
-# add to full list (autopop off)
-messages.set_autopop(False)
-messages.add("dev", "test message", {"developer_code": 3})
-print(f"{messages}\n")
+    # add to full list (autopop off)
+    messages.set_autopop(False)
+    messages.add("dev", "test message", {"developer_code": 3})
+    print(f"{messages}\n")
 
-# pop last x2
-messages.pop()
-messages.pop()
-print(f"{messages}\n")
+    # pop last x2
+    messages.pop()
+    messages.pop()
+    print(f"{messages}\n")
 
-# pop and take last
-popped_message = messages.pop()
-print(f"popped message: {popped_message}")
-print(f"current count of the queue: {messages.count()}\n")
+    # pop and take last
+    popped_message = messages.pop()
+    print(f"popped message: {popped_message}")
+    print(f"current count of the queue: {messages.count()}\n")
 
-# pop empty queue
-popped_message = messages.pop()
-print(f"empty string pop: {popped_message}")
+    # pop empty queue
+    popped_message = messages.pop()
+    print(f"empty string pop: {popped_message}")
 
-# changing queue size (no messages)
-messages.set_size(5)
-print(f"{messages}\n")
+    # changing queue size (no messages)
+    messages.set_size(5)
+    print(f"{messages}\n")
 
-# new messages
-messages.add("Pluto", "WOOF!")
-messages.add("Hello Kitty", "meow")
-messages.add("picky piglet", "oink")
-messages.add("Ron Weasly", "that's rubbish!")
-print(f"{messages}\n")
+    # new messages
+    messages.add("Pluto", "WOOF!")
+    messages.add("Hello Kitty", "meow")
+    messages.add("picky piglet", "oink")
+    messages.add("Ron Weasly", "that's rubbish!")
+    print(f"{messages}\n")
 
-# changing queue size
-messages.set_size(2)
-print(f"{messages}\n")
+    # changing queue size
+    messages.set_size(2)
+    print(f"{messages}\n")

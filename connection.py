@@ -6,7 +6,7 @@ import time
 import os
 import logging
 import requests
-from messages import Messages
+from messages import NPCMessages
 from dotenv import load_dotenv
 
 # loads .env variables
@@ -38,7 +38,7 @@ class TwitchConnection:
         self.chat = os.environ.get("CHAT")
         self.client_id = os.environ.get("CLIENT_ID")
         self.thread_lock = threading.Lock()
-        self.chat_messages = Messages()
+        self.chat_messages = NPCMessages()
 
         self.broadcaster_id = self.get_broadcaster_id()
         self.channel_sub_emotes, self.channel_follower_emotes = self.get_channel_emotes(self.broadcaster_id)
