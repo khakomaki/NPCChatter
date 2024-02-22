@@ -5,7 +5,6 @@ class MessagesQueue:
     Class for storing messages into a queue, where the first message gets popped out first.
     
     Attributes:
-        max_size (int) Maximum size of the queue.
         autopop (bool): Enable/disable automatically popping the last message if queue is full.
     """
     
@@ -18,14 +17,14 @@ class MessagesQueue:
             autopop (bool, optional): Enable/disable automatically popping the last message if queue is full. Defaults to True.
         """
 
-        if max_size <= 0:
-            # sets default size if invalid queue size is given
-            self.max_size = 1
-        else:
+        # default for invalid sizes
+        size = 1
+
+        if 0 < max_size:
             # sets queue size
-            self.max_size = max_size
+            size = max_size
         
-        self.messages = deque(maxlen=self.max_size)
+        self.messages = deque(maxlen=size)
         self.autopop = autopop
     
     def __str__(self) -> str:
@@ -37,6 +36,25 @@ class MessagesQueue:
         """
 
         return "\n".join(self.messages)
+    
+    def max_size(self) -> int:
+        """
+        Returns the max size of the queue.
+
+        Returns:
+            int: Max size of the queue. 
+        """
+        return self.messages.maxlen
+    
+    def count(self) -> int:
+        """
+        Returns how many messages are in the queue.
+
+        Returns:
+            int: Message count.
+        """
+
+        return len(self.messages)
 
     def add(self, message: str) -> bool:
         """
@@ -51,7 +69,7 @@ class MessagesQueue:
         """
         full = False
         
-        if self.max_size <= len(self.messages):
+        if self.max_size() <= len(self.messages):
             # queue is full
             full = True
 
@@ -80,6 +98,12 @@ class MessagesQueue:
         
         return self.messages.popleft()
     
+    def clear(self):
+        """
+        Clears the message queue.
+        """
+        self.messages.clear()
+    
     def set_autopop(self, on: bool):
         """
         Sets autopop on/off.
@@ -89,12 +113,20 @@ class MessagesQueue:
         """
         self.autopop = on
 
+    def set_size(self, max_size: int):
+        
+        if max_size <= 0:
+            # doesn't change size if invalid value is given
+            return
+
 # full list
 messages = MessagesQueue(3)
 messages.add("hello")
 messages.add("hi")
 messages.add("good evening")
 print(f"{messages}\n")
+print(f"max size of the queue: {messages.max_size()}")
+print(f"current count of the queue: {messages.count()}")
 
 # add to full list (autopop on)
 messages.add("chatting chatting chatting...")
@@ -113,6 +145,7 @@ print(f"{messages}\n")
 # pop and take last
 popped_message = messages.pop()
 print(f"popped message: {popped_message}")
+print(f"current count of the queue: {messages.count()}\n")
 
 # pop empty queue
 popped_message = messages.pop()
