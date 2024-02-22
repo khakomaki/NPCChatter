@@ -1,4 +1,4 @@
-from collections import deque
+from collections import Counter, deque
 
 class MessagesQueue:
     """
@@ -62,7 +62,7 @@ class MessagesQueue:
 
         return len(self.messages)
 
-    def add(self, username: str, message: str, parameters: any=None) -> bool:
+    def add(self, username: str, message: str, parameters: dict = {}) -> bool:
         """
         Adds a message to the queue.
         Pops last message automatically if the queue is full.
@@ -70,7 +70,7 @@ class MessagesQueue:
         Args:
             username (str): Message sender.
             message (str): Message to be added.
-            parameters (any, optional): Possible extra parameters related to message.
+            parameters (dict, optional): Extra parameters related to message.
 
         Returns:
             bool: Boolean for "was the queue full?". 
@@ -88,6 +88,10 @@ class MessagesQueue:
                 # returns that queue was full without adding
                 return full
         
+        # adds word counts to parameters
+        word_counts = Counter(message.split())
+        parameters['word_counter'] = word_counts
+
         # adds message, returns if the queue was full
         self.messages.append((username, message, parameters))
         return full
@@ -122,10 +126,25 @@ class MessagesQueue:
         self.autopop = on
 
     def set_size(self, max_size: int):
-        
+        """
+        Sets new queue size. Pops oldest messages if they don't fit to new size.
+        Doesn't change size if invalid value is given.
+
+        Args:
+            max_size (int): New maximum queue size.
+        """
+
         if max_size <= 0:
             # doesn't change size if invalid value is given
             return
+        
+        # appends old messages to new queue
+        new_queue = deque(maxlen=max_size)
+        while self.messages:
+            new_queue.append(self.messages.popleft())
+        
+        # replaces old queue with new
+        self.messages = new_queue
 
 # full list
 messages = MessagesQueue(3)
@@ -158,3 +177,18 @@ print(f"current count of the queue: {messages.count()}\n")
 # pop empty queue
 popped_message = messages.pop()
 print(f"empty string pop: {popped_message}")
+
+# changing queue size (no messages)
+messages.set_size(5)
+print(f"{messages}\n")
+
+# new messages
+messages.add("Pluto", "WOOF!")
+messages.add("Hello Kitty", "meow")
+messages.add("picky piglet", "oink")
+messages.add("Ron Weasly", "that's rubbish!")
+print(f"{messages}\n")
+
+# changing queue size
+messages.set_size(2)
+print(f"{messages}\n")
