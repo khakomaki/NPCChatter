@@ -4,7 +4,6 @@ import certifi
 import threading
 import time
 import os
-import random
 import logging
 import requests
 from messages import Messages
