@@ -1,6 +1,5 @@
 from messagesQueue import MessagesQueue
 from collections import Counter
-from typing import Dict
 
 class NPCMessages:
     """
@@ -137,7 +136,12 @@ class NPCMessages:
         # unique chatters
         self.unique_chatters = len(self.user_word_counts)
 
-        # percentage
+        # avoid division by 0
+        if self.unique_chatters <= 0:
+            self.npc_meter = 0
+            return
+        
+        # calculate percentage
         self.npc_meter = (npc_word_message_count / self.unique_chatters) * 100
 
     def update_npc_message(self):
