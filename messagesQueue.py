@@ -30,12 +30,18 @@ class MessagesQueue:
     def __str__(self) -> str:
         """
         Returns string representation of the queue. Messages are separated by newlines.
+        Doesn't print extra parameters.
+        
+        Example:
+            "Donald Duck: hi chat!"
+            "Mickey Mouse: hi Donald!"
+            "Harry Potter: Abracadabra"
 
         Returns:
             str: Queue in a string form.
         """
 
-        return "\n".join(self.messages)
+        return "\n".join(f"{user}: {user_message}" for user, user_message, _ in self.messages)
     
     def max_size(self) -> int:
         """
@@ -56,13 +62,15 @@ class MessagesQueue:
 
         return len(self.messages)
 
-    def add(self, message: str) -> bool:
+    def add(self, username: str, message: str, parameters: any=None) -> bool:
         """
         Adds a message to the queue.
         Pops last message automatically if the queue is full.
 
         Args:
+            username (str): Message sender.
             message (str): Message to be added.
+            parameters (any, optional): Possible extra parameters related to message.
 
         Returns:
             bool: Boolean for "was the queue full?". 
@@ -81,7 +89,7 @@ class MessagesQueue:
                 return full
         
         # adds message, returns if the queue was full
-        self.messages.append(message)
+        self.messages.append((username, message, parameters))
         return full
 
     def pop(self) -> str:
@@ -121,20 +129,20 @@ class MessagesQueue:
 
 # full list
 messages = MessagesQueue(3)
-messages.add("hello")
-messages.add("hi")
-messages.add("good evening")
+messages.add("user123", "hello")
+messages.add("Donald Duck", "hi", {"subscriber": True})
+messages.add("Mickey Mouse", "good evening")
 print(f"{messages}\n")
 print(f"max size of the queue: {messages.max_size()}")
 print(f"current count of the queue: {messages.count()}")
 
 # add to full list (autopop on)
-messages.add("chatting chatting chatting...")
+messages.add("Donald Duck", "chatting chatting chatting...", {"subscriber": True})
 print(f"{messages}\n")
 
 # add to full list (autopop off)
 messages.set_autopop(False)
-messages.add("test message")
+messages.add("dev", "test message", {"developer_code": 3})
 print(f"{messages}\n")
 
 # pop last x2
