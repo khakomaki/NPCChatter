@@ -197,43 +197,44 @@ class NPCMessages:
     def get_npc_word(self) -> str:
         return self.npc_word
 
+if __name__ == '__main__':
+    
+    messages = NPCMessages(5)
+    messages.set_threshold(60)
+    messages.set_min_same_word_count(3)
 
-messages = NPCMessages(5)
-messages.set_threshold(60)
-messages.set_min_same_word_count(3)
+    messages.add("user123", "KEKW KEKW KEKW ICANT")
+    messages.add("dev", "TEST HELLO")
+    messages.add("bananaman", "banana")
+    messages.add("chatter", "TEST TEST TEST TEST TEST TEST")
+    messages.add("user123", "KEKW KEKW KEKW TEST")
 
-messages.add("user123", "KEKW KEKW KEKW ICANT")
-messages.add("dev", "TEST HELLO")
-messages.add("bananaman", "banana")
-messages.add("chatter", "TEST TEST TEST TEST TEST TEST")
-messages.add("user123", "KEKW KEKW KEKW TEST")
+    print(f"How NPC: {messages.howNPC()}")
 
-print(f"How NPC: {messages.howNPC()}")
+    if messages.add("user123", "KEKW KEKW KEKW ICANT"):
+        print(f"{messages.howNPC()} - {messages.npc_message}")
+        messages.clear()
 
-if messages.add("user123", "KEKW KEKW KEKW ICANT"):
-    print(f"{messages.howNPC()} - {messages.npc_message}")
-    messages.clear()
+    if messages.add("DEV", "TEST HELLO"):
+        print(f"{messages.howNPC()} - {messages.npc_message}")
+        messages.clear()
 
-if messages.add("DEV", "TEST HELLO"):
-    print(f"{messages.howNPC()} - {messages.npc_message}")
-    messages.clear()
+    if messages.add("chatter", "TEST TEST TEST TEST TEST TEST"):
+        print(f"{messages.howNPC()} - {messages.npc_message}")
+        messages.clear()
 
-if messages.add("chatter", "TEST TEST TEST TEST TEST TEST"):
-    print(f"{messages.howNPC()} - {messages.npc_message}")
-    messages.clear()
+    if messages.add("user123", "KEKW KEKW KEKW TEST"):
+        print(f"{messages.howNPC()} - {messages.npc_message}")
+        messages.clear()
 
-if messages.add("user123", "KEKW KEKW KEKW TEST"):
-    print(f"{messages.howNPC()} - {messages.npc_message}")
-    messages.clear()
+    if messages.add("DEV", "KEKW"):
+        print(f"{messages.howNPC()} - {messages.npc_message}")
+        messages.clear()
 
-if messages.add("DEV", "KEKW"):
-    print(f"{messages.howNPC()} - {messages.npc_message}")
-    messages.clear()
+    if messages.add("other_username", "KEKW KEKW KEKW"):
+        print(f"{messages.howNPC()} - {messages.npc_message}")
+        messages.clear()
 
-if messages.add("other_username", "KEKW KEKW KEKW"):
-    print(f"{messages.howNPC()} - {messages.npc_message}")
-    messages.clear()
-
-if messages.add("Mod", "KEKW KEKW KEKW"):
-    print(f"{messages.howNPC()} - {messages.npc_message}")
-    messages.clear()
+    if messages.add("Mod", "KEKW KEKW KEKW"):
+        print(f"{messages.howNPC()} - {messages.npc_message}")
+        messages.clear()
