@@ -16,6 +16,12 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 class TwitchConnection:
+    """
+    Estabilishes connection to Twitch.
+
+    Raises:
+        TwitchConnectionError: If something happens to the connection.
+    """
 
     PORT                    = 6697
     SERVER                  = "irc.chat.twitch.tv"
@@ -33,6 +39,7 @@ class TwitchConnection:
     follower_emotes_enabled = True
 
     def __init__(self):
+        """Initializes Twitch connection by acquiring environment variables and connecting."""
         self.oauth = os.environ.get("OAUTH_TOKEN_TWITCH")
         self.nickname = os.environ.get("NICKNAME")
         self.chat = os.environ.get("CHAT")
@@ -251,6 +258,12 @@ class TwitchConnection:
             logging.info(f"Sent message: '{message}'")
 
     def update_last_bot_message(self, message: str):
+        """
+        Updates bot message history.
+
+        Args:
+            message (str): Message to be added.
+        """
         if message == self.last_bot_message:
             self.same_message_count += 1
         else:
@@ -258,6 +271,16 @@ class TwitchConnection:
             self.last_bot_message = message
 
     def can_send(self, message: str) -> bool:
+        """
+        Validates if a certain message can be sent.
+
+        Args:
+            message (str): Message to be sent.
+
+        Returns:
+            bool: Boolean if the message can be sent.
+        """
+
         # doesnt't send if it would exceed maximum same message count
         if self.max_same_message_count < self.same_message_count:
             return False
@@ -279,6 +302,19 @@ class TwitchConnection:
         return True
     
     def get_channel_emotes(self, broadcaster_id: str) -> list[tuple]:
+        """
+        Fetches a list of channel emotes.
+
+        Args:
+            broadcaster_id (str): ID of the broadcaster.
+
+        Raises:
+            TwitchConnectionError: If the connection can't be estabilished.
+
+        Returns:
+            list[tuple]: List of channel emotes.
+        """
+
         # sends request for channel emote info
         url = f"https://api.twitch.tv/helix/chat/emotes?broadcaster_id={broadcaster_id}"
         headers = {
@@ -310,6 +346,15 @@ class TwitchConnection:
 
 
     def get_broadcaster_id(self) -> str:
+        """
+        Fetches broadcaster ID.
+
+        Raises:
+            TwitchConnectionError: If connection to Twitch can't be estabilished.
+        Returns:
+            str: ID of the broadcaster.
+        """
+
         # sends request for broadcaster info
         url = f"https://api.twitch.tv/helix/users?login={self.chat}"
         headers = {
@@ -330,22 +375,37 @@ class TwitchConnection:
 
 
     def is_connected(self):
+        """
+        Returns if connection is estabilished.
+
+        Returns:
+            _type_: Is connection estabilished.
+        """
         with self.thread_lock:
             return self.connected
 
     def toggle_npc_response(self):
+        """Toggles if NPC messages are being sent"""
         self.npc_response_enabled = not self.npc_response_enabled
         logging.info(f"NPC-response enabled: {self.npc_response_enabled}")
 
     def toggle_sub_emotes(self):
+        """Toggles if sub emotes are enabled in bot responses"""
         self.sub_emotes_enabled = not self.sub_emotes_enabled
         logging.info(f"Sub emote response enabled: {self.sub_emotes_enabled}")
 
     def toggle_follower_emotes(self):
+        """Toggles if follower emotes are enabled in bot responses"""
         self.follower_emotes_enabled = not self.follower_emotes_enabled
         logging.info(f"Follower emote response enabled: {self.follower_emotes_enabled}")
 
     def set_queue_length(self, length: int):
+        """
+        Sets the maximum length of the message queue for processing NPC messages.
+
+        Args:
+            length (int): Maximum length of the message queue.
+        """
         self.chat_messages.set_queue_length(length)
 
     def get_queue_length(self) -> int:
@@ -381,6 +441,7 @@ class TwitchConnection:
 
 
 class TwitchConnectionError(Exception):
+    """Custom error for Twitch connection"""
     pass
 
 
