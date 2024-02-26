@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 class TwitchConnection:
     """
-    Estabilishes connection to Twitch.
+    Establishes connection to Twitch.
 
     Raises:
         TwitchConnectionError: If something happens to the connection.
@@ -309,7 +309,7 @@ class TwitchConnection:
             broadcaster_id (str): ID of the broadcaster.
 
         Raises:
-            TwitchConnectionError: If the connection can't be estabilished.
+            TwitchConnectionError: If the connection can't be established.
 
         Returns:
             list[tuple]: List of channel emotes.
@@ -350,7 +350,7 @@ class TwitchConnection:
         Fetches broadcaster ID.
 
         Raises:
-            TwitchConnectionError: If connection to Twitch can't be estabilished.
+            TwitchConnectionError: If connection to Twitch can't be established.
         Returns:
             str: ID of the broadcaster.
         """
@@ -376,10 +376,10 @@ class TwitchConnection:
 
     def is_connected(self):
         """
-        Returns if connection is estabilished.
+        Returns if connection is established.
 
         Returns:
-            _type_: Is connection estabilished.
+            _type_: Is connection established.
         """
         with self.thread_lock:
             return self.connected
